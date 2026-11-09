@@ -16,7 +16,8 @@
   /* 硬规则：提示词非对白正文不出现人名／地名（台词引号内逐字保留）。Codex 第 3 轮 P0 */
   WB.DENAME = [[/\bElias's\b/g, "the father's"], [/\bElias\b/g, 'the father'], [/\bNoah's\b/g, "the android child's"], [/\bNoah\b/gi, 'the android child'], [/\b(the commander |Kane )Mercer's\b/g, "the commander's"], [/\b(the commander |Kane )Mercer\b/g, 'the commander'], [/\bMercer's\b/g, "the commander's"], [/\bMercer\b/g, 'the commander'], [/\bKane's\b/g, "the commander's"], [/\bKane\b/g, 'the commander'], [/\bthe Rustline scrapyard\b/g, 'the scrapyard'], [/\bRustline\b/g, 'scrapyard']];
   WB.deName = function (t) {
-    return String(t).split(/("[^"]*"|\[REF:[^\]]*\])/).map((seg, i) => i % 2 ? seg : WB.DENAME.reduce((a, [re, to]) => a.replace(re, to), seg)).join('').replace(/(^|[.!?:]\s+|\|\s+)the (father|android child|commander|scrapyard)/g, (m, p, w) => p + 'The ' + w);
+    /* 批准对白用 \u0001…\u0002 包住，整段逐字保留（对白里可以有引号）；其余引号段、REF 码也保留 */
+    return String(t).split(/(\u0001[^\u0002]*\u0002|"[^"]*"|\[REF:[^\]]*\])/).map((seg, i) => i % 2 ? seg : WB.DENAME.reduce((a, [re, to]) => a.replace(re, to), seg)).join('').replace(/(^|[.!?:]\s+|\|\s+)the (father|android child|commander|scrapyard)/g, (m, p, w) => p + 'The ' + w).replace(/[\u0001\u0002]/g, '');
   };
   WB.NAMES_RE = /\b(Elias|Noah|Kane|Mercer|Rustline)\b/i;
   /* 只豁免本组批准台词的原句（不是所有引号）：别处的引号、REF 码、道具铭牌都要查名 */
@@ -55,15 +56,24 @@
       decisions: {}, approvals: {}, copies: [], rev: 0, finalMode: false,
     };
     st._idx = {}; st.data.shots.forEach((s, i) => { st._idx[s.id] = i; });
+    /* 文学基线（不进存档）：台词原文、说话者、类型、单段上限都以构建数据为准；存档里被改过的一律还原并记日志（Codex 第 6 轮） */
+    st._base = {}; data.shots.forEach((s) => s.dialogue.forEach((d, i) => { st._base[s.id + '|' + (d.ref || i)] = { en: d.en, speaker: d.speaker, type: d.type }; }));
+    let litBad = null; if (saved && st.litRev && WB.litReplay) { const lr = WB.litReplay(st); if (!lr.ok) litBad = lr.bad; }
+    if (saved) { const fixed = []; if (litBad) fixed.push('剧本改稿链（第 ' + litBad + ' 版起对不上，已作废）'); st.data.shots.forEach((s) => s.dialogue.forEach((d, i) => { const b = st._base[s.id + '|' + (d.ref || i)]; if (!b) { fixed.push(s.id + ' 多出台词'); return; } ['en', 'speaker', 'type'].forEach((k) => { if (d[k] !== b[k]) { fixed.push(s.id + ' ' + k); d[k] = b[k]; } }); }));
+      const ms0 = JSON.stringify(data.scene.modelSpec || null); if (JSON.stringify(st.data.scene.modelSpec || null) !== ms0) { st.data.scene.modelSpec = clone(data.scene.modelSpec); fixed.push('模型规格'); }
+      if (JSON.stringify(st.data.literary.lines) !== JSON.stringify(data.literary.lines)) { st.data.literary = clone(data.literary); fixed.push('文学本'); }
+      if (fixed.length) { st.log = st.log || []; st.integrity = fixed; } }
     st.data.shots.forEach((s) => { s.fieldLocks = s.fieldLocks || {}; });
     st.data.groups.forEach((g) => { g.fieldLocks = g.fieldLocks || {}; g.firstFrameRef = g.firstFrameRef || null; });
     /* 文件索引是文件态的事实源：apply_ops 落地后，本地缓存里的同 key 条目以文件为准（审批态保留本地），新条目补入 */
     if (saved && refIndex && refIndex.entries) { const byKey = new Map(st.refIndex.entries.map((e) => [e.key, e])); refIndex.entries.forEach((e) => { const o = byKey.get(e.key); if (!o) st.refIndex.entries.push(clone(e)); else { o.fileState = e.fileState; o.sha8 = e.sha8 || o.sha8; o.file = e.file || o.file; } }); }
     if (!saved) WB.autoPick(st);
     WB.refreshFirstFrameRefs(st);
+    if (saved) { if (st.integrity && st.integrity.length) { st.data.groups.forEach((g) => WB.touchGroup(st, g.id, { depth: 9 })); WB.logEntry(st, { who: '系统（载入复核）', text: '存档里受保护的内容与文学基线不符，已还原：' + st.integrity.slice(0, 6).join('、') + '；相关审批全部撤回', scope: '场', target: 'S04', variable: '完整性', before: '不符', after: '已还原', status: '已应用' }); } st.data.groups.forEach((g) => WB.revalidate(st, g.id, '系统（载入复核）')); }
     return st;
   };
-  WB.serialize = (st) => { const o = Object.assign({}, st); delete o._idx; return clone(o); };
+  WB.nowStr = nowStr;
+  WB.serialize = (st) => { const o = Object.assign({}, st); delete o._idx; delete o._base; delete o.integrity; return clone(o); };
   WB.shot = (st, id) => st.data.shots[st._idx[id]];
   WB.group = (st, gid) => st.data.groups.find((g) => g.id === gid);
   WB.groupOf = (st, sid) => st.data.groups.find((g) => g.shots.includes(sid));
@@ -87,6 +97,8 @@
     st.decisions['OPTICS'] = { value: '视听提案光学包', by: '总监（代选）', proxy: true, time: nowStr() };
   };
   WB.chooseDirection = function (st, oid, who, proxy) {
+    /* 权限在业务层判（Codex 独立 v0.7 P1-4）：导演选＝确认；总监选＝代选，一律待导演确认；其他角色拒绝。proxy 由角色推导，不信调用方 */
+    const isDir = who === '导演'; if (!isDir && !/^总监/.test(String(who))) return { ok: false, msg: '只有导演或总监可以选方向' }; proxy = !isDir;
     const dg = st.data.scene.diagnosis; const o = dg.options.find((x) => x.id === oid);
     if (!o) return { ok: false, msg: '无此方向' };
     const payload = JSON.stringify(o);
@@ -349,7 +361,7 @@
     const base = { parsed: p, intent: { scope: p.scope, target: p.target, variable: p.variable, constraint: p.constraint } };
     if (!WB.unlocked(st)) return Object.assign(base, { status: '拒绝', msg: '第0关还未选方向，拆解未解锁' });
     if (p.literary) {
-      const e = WB.logEntry(st, { who, text, scope: p.scope, target: p.target, variable: p.variable, before: '—', after: '—', status: '需剧作/导演确认' });
+      if (!opts.confirm) return Object.assign(base, { status: '预览', willBe: '需剧作/导演确认', msg: '确认后转剧作/导演确认：工作台不直接生效（预览不写日志）' }); const e = WB.logEntry(st, { who, text, scope: p.scope, target: p.target, variable: p.variable, before: '—', after: '—', status: '需剧作/导演确认' });
       st.proposals.push({ id: e.id, kind: 'literary', who, text, target: p.target, status: '需剧作/导演确认', time: e.time });
       return Object.assign(base, { status: '需剧作/导演确认', msg: '涉及台词、事件顺序或动作者：工作台不直接生效，已转剧作/导演确认', entry: e });
     }
@@ -364,15 +376,15 @@
       return Object.assign(base, { status: '已应用', msg: (p.on ? '已锁定 ' : '已解锁 ') + ids.map((x) => x.slice(4)).join('、'), invalidates: out.flatMap((r) => r.invalidates || []) });
     }
     if (p.kind === 'notInFrame') {
-      const sid = p.shots[0]; const s = WB.shot(st, sid); const lines = st.data.literary.lines.slice(s.literary.lines[0] - 1, s.literary.lines[1]).map((l) => l.text).join('');
+      const sid = p.shots[0]; const s = WB.shot(st, sid); const lines = (WB.litLines ? WB.litLines(st) : st.data.literary.lines).slice(s.literary.lines[0] - 1, s.literary.lines[1]).map((l) => l.text).join('');
       const nm = p.who.replace(/^(看见|看到)/, '');
       const inLit = nm && lines.includes(nm) || (nm === '它' && lines.includes('诺亚'));
       if (inLit) {
-        const e = WB.logEntry(st, { who, text, scope: '镜', target: sid, variable: '规则·不入画', before: '入画', after: nm + ' 不入画', status: '需剧作/导演确认' });
+        if (!opts.confirm) return Object.assign(base, { status: '预览', willBe: '需剧作/导演确认', msg: '确认后转剧作/导演确认：工作台不直接生效（预览不写日志）' }); const e = WB.logEntry(st, { who, text, scope: '镜', target: sid, variable: '规则·不入画', before: '入画', after: nm + ' 不入画', status: '需剧作/导演确认' });
         st.proposals.push({ id: e.id, kind: 'literary', who, text, target: sid, status: '需剧作/导演确认', time: e.time, note: `文学本 L${s.literary.lines[0]}–${s.literary.lines[1]} 写明「${nm}」在此可见` });
         return Object.assign(base, { status: '需剧作/导演确认', msg: `文学本 L${s.literary.lines[0]}–${s.literary.lines[1]} 写明「${nm}」在这一镜可见：不入画会改戏，已转剧作/导演确认` });
       }
-      if (WB.isLocked(st, sid, 'rules') && !(who === '导演' && opts.overrideLock)) { const e = WB.logEntry(st, { who, text, scope: '镜', target: sid, variable: '规则·不入画', before: '（已锁定）', after: '提议：' + text, status: '提议（黄）' }); st.proposals.push({ id: e.id, kind: 'locked', who, text, ctx: opts.ctx || {}, target: sid, status: '待导演点头', time: e.time }); return Object.assign(base, { status: '提议（黄）', msg: WB.lockReason(st, sid, 'rules') + '：不自动改，已标黄提议等导演点头', entry: e }); }
+      if (WB.isLocked(st, sid, 'rules') && !(who === '导演' && opts.overrideLock)) { if (!opts.confirm) return Object.assign(base, { status: '预览', willBe: '提议（黄）', msg: '涉及已锁定内容：确认后只提交黄色提议，待导演点头（预览不写日志）' }); const e = WB.logEntry(st, { who, text, scope: '镜', target: sid, variable: '规则·不入画', before: '（已锁定）', after: '提议：' + text, status: '提议（黄）' }); st.proposals.push({ id: e.id, kind: 'locked', who, text, ctx: opts.ctx || {}, target: sid, status: '待导演点头', time: e.time }); return Object.assign(base, { status: '提议（黄）', msg: WB.lockReason(st, sid, 'rules') + '：不自动改，已标黄提议等导演点头', entry: e }); }
       if (!opts.confirm) return Object.assign(base, { status: '预览', msg: `将在 ${sid.slice(4)} 加规则：${nm} 不入画` });
       s.rules.push({ notInFrame: nm, by: who }); s.rev++; WB.touchGroup(st, WB.groupOf(st, sid).id);
       const e = WB.logEntry(st, { who, text, scope: '镜', target: sid, variable: '规则·不入画', before: '—', after: nm + ' 不入画', status: '已应用' });
@@ -390,7 +402,7 @@
     const fieldKey = { focal: 'focal', aperture: 'aperture', move: 'move', ct: 'lighting', quality: 'lighting' }[p.field] || 'duration';
     const locked = targets.filter((id) => WB.isLocked(st, id, fieldKey));
     if (locked.length && !(who === '导演' && opts.overrideLock)) {
-      const e = WB.logEntry(st, { who, text, scope: p.scope, target: locked.join('、'), variable, before: '（已锁定）', after: '提议：' + text, status: '提议（黄）' });
+      if (!opts.confirm) return Object.assign(base, { status: '预览', willBe: '提议（黄）', msg: '涉及已锁定内容：确认后只提交黄色提议，待导演点头（预览不写日志）' }); const e = WB.logEntry(st, { who, text, scope: p.scope, target: locked.join('、'), variable, before: '（已锁定）', after: '提议：' + text, status: '提议（黄）' });
       st.proposals.push({ id: e.id, kind: 'locked', who, text, ctx: Object.assign({}, opts.ctx || {}, { shot: locked[0] }), mode: opts.mode, target: locked.join('、'), status: '待导演点头', time: e.time });
       return Object.assign(base, { status: '提议（黄）', msg: `${WB.lockReason(st, locked[0], fieldKey)}：不自动改，已标黄提议等导演点头`, entry: e });
     }
@@ -402,7 +414,7 @@
       if (plan.ok && !opts.force) { for (const x of plan.plan) { const c = WB.conflictFor(st, who, x.id, '时长'); if (c) return Object.assign(base, { status: '冲突', msg: `这次会连带改 ${x.id.slice(4)}，而它的时长刚被 ${c.who} 于 ${c.time.slice(11, 16)} 改过、你还没看到`, conflict: { theirs: c, mine: text, sid: x.id, field: '时长' }, plan }); } }
       if (!plan.ok) { const e = WB.logEntry(st, { who, text, scope: '组', target: gid, variable: '时长', before: plan.groupBefore + '″', after: (plan.groupAfter || '—') + '″', status: '拒绝（超限）', alarm: plan.reason }); return Object.assign(base, { status: plan.needRegroup ? '需重切组' : '超限', msg: plan.reason, plan, entry: e }); }
       const wl = WB.writeSetLocks(st, plan.plan, p.beat ? { id: targets[0] } : null);
-      if (wl.length && !(who === '导演' && opts.overrideLock)) { const e = WB.logEntry(st, { who, text, scope: '组', target: gid, variable: '时长（连带锁定字段）', before: '（已锁定）', after: '提议：' + text, status: '提议（黄）' }); st.proposals.push({ id: e.id, kind: 'locked', who, text, ctx: Object.assign({}, opts.ctx || {}, { shot: targets[0] }), mode: opts.mode, target: targets.join('、'), status: '待导演点头', time: e.time }); return Object.assign(base, { status: '提议（黄）', msg: wl.join('；') + '：不自动改，已标黄提议等导演点头', entry: e }); }
+      if (wl.length && !(who === '导演' && opts.overrideLock)) { if (!opts.confirm) return Object.assign(base, { status: '预览', willBe: '提议（黄）', msg: '涉及已锁定内容：确认后只提交黄色提议，待导演点头（预览不写日志）' }); const e = WB.logEntry(st, { who, text, scope: '组', target: gid, variable: '时长（连带锁定字段）', before: '（已锁定）', after: '提议：' + text, status: '提议（黄）' }); st.proposals.push({ id: e.id, kind: 'locked', who, text, ctx: Object.assign({}, opts.ctx || {}, { shot: targets[0] }), mode: opts.mode, target: targets.join('、'), status: '待导演点头', time: e.time }); return Object.assign(base, { status: '提议（黄）', msg: wl.join('；') + '：不自动改，已标黄提议等导演点头', entry: e }); }
       if (!opts.confirm) return Object.assign(base, { status: '预览', msg: '秒数扣减预览（确认后才生效）', plan });
       const e = WB.commitPlan(st, gid, plan.plan, who, text, p.beat ? { id: targets[0], text } : null); e.touched = plan.plan.map((x) => x.id);
       return Object.assign(base, { status: '已应用', msg: (p.beat ? WB.shot(st, targets[0]).beatNote + '；' : '') + `已改：${plan.plan.map((x) => `${x.id.slice(4)} ${x.before}→${x.after}″`).join('，')}；${WB.group(st, gid).name} ${plan.groupBefore}→${plan.groupAfter}″`, plan, entry: e });
@@ -581,10 +593,13 @@
   WB.refreshFirstFrameRefs = function (st) {
     st.data.groups.forEach((g, i) => {
       const prev = st.data.groups[i - 1]; if (!prev) return;
-      const actual = prev.clips.find((c) => c.lastFrame && c.lastFrameData !== undefined && c.status === '已批');
+      const actual = prev.clips.find((c) => c.lastFrameData && c.lastFrameSha && c.status === '已批' && WB.sha256(c.lastFrameData) === c.lastFrameSha);
       const last = WB.shot(st, prev.shots[prev.shots.length - 1]);
       const cur = g.firstFrameRef;
-      if (actual) { if (!cur || cur.file !== actual.lastFrame) g.firstFrameRef = { file: actual.lastFrame, from: '上一组实际尾帧', sha8: actual.sha8, status: '候选', clip: actual.id }; }
+      /* 刷新恢复：按 lastFrameFile/data/完整 sha 原样重建；引用已一致就不动（Codex 第 5 轮 G：曾按旧 .png 路径和片段 sha8 重建） */
+      const badData = cur && cur.from === '上一组实际尾帧' && cur.data && cur.sha && WB.sha256(cur.data) !== cur.sha;
+      if (!actual && cur && cur.from === '上一组实际尾帧' && cur.status !== '过期') { cur.status = '过期'; g.refExpired = true; WB.touchGroup(st, g.id, { depth: 1 }); }
+      if (actual) { if (badData || !cur || cur.from !== '上一组实际尾帧' || cur.sha !== actual.lastFrameSha || cur.file !== (actual.lastFrameFile || actual.lastFrame)) g.firstFrameRef = { file: actual.lastFrameFile || actual.lastFrame, data: actual.lastFrameData, from: '上一组实际尾帧', sha: actual.lastFrameSha, sha8: actual.lastFrameSha8, status: '已批', clip: actual.id }; else if (!cur.data) cur.data = actual.lastFrameData; }
       else if (!cur || cur.from !== '上一组实际尾帧') g.firstFrameRef = { file: last.sketch ? last.sketch.out : `assets/sketch/${last.id}_${last.fixed ? 'in' : 'out'}.png`, from: '上一组末镜草图', exists: !!last.sketch, status: last.sketch ? last.sketch.status : '待生成' };
     });
   };
@@ -592,8 +607,8 @@
   WB.revalidate = function (st, gid, who) {
     const g = WB.group(st, gid); const clip = g && g.clips.filter((c) => c.status !== '已作废').slice(-1)[0]; if (!clip || !clip.basedOn) return false;
     if (clip.basedOn === WB.groupHash(st, gid)) return false;
-    const was = clip.status; clip.status = '需复核'; Object.keys(clip.checks).forEach((k) => { clip.checks[k] = false; }); if (g.lock === '锁定') g.lock = '草案';
-    WB.logEntry(st, { who: who || '系统', text: `${clip.id} 生成依据变了（首帧/内容）→ ${was} 改为需复核，三方签字与组锁撤销`, scope: '组', target: gid, variable: '验收', before: was, after: '需复核', status: '已应用' });
+    const was = clip.status; const out = WB.touchGroup(st, gid, { depth: 0 }); clip.status = '需复核';
+    WB.logEntry(st, { who: who || '系统', text: `${clip.id} 生成依据变了（首帧/内容）→ ${was} 改为需复核，三方签字与组锁撤销；下游：${out.filter((x) => !x.startsWith(clip.id)).join('；') || '无'}`, scope: '组', target: gid, variable: '验收', before: was, after: '需复核', status: '已应用' });
     return true;
   };
   WB.LASTFRAME_ROLES = ['视听', '剪辑', '导演'];
@@ -614,8 +629,29 @@
     if (clip.status === '已批') WB.checkClip(st, gid, null, who, true);
     return { ok: true, applied: clip.status === '已批', sha8: sha.slice(0, 8) };
   };
+  /* 每镜开画人物：画外说话者、动作里明确入画（enters / walks in / appears in…）的人记为「not yet visible」；「appears tired」不算入画（Codex 第 5 轮） */
+  WB.ENTER_RE = "(enters|entering|steps into|steps in|walks into|walks in|comes into|comes in|arrives|appears (?:in|from|at|through|out of|behind|over)|comes into view)";
+  WB.openers = function (st, s) {
+    const who = []; s.assets.forEach((a) => { if (a.inFrame === false) return; const id = a.id || WB.tmpCode(a.name); const d = WB.CHAR_EN[id]; if (d) { const nm = d.split(':')[0].replace(/^The /, 'the '); if (!who.includes(nm)) who.push(nm); } });
+    const actD = WB.deName(s.actionEn); const offS = s.dialogue.filter((d) => d.type === '画外').map((d) => WB.deName(WB.NAME_EN[d.speaker] || d.speaker).toLowerCase());
+    const late = who.filter((nm) => offS.includes(nm.toLowerCase()) || new RegExp(nm.replace(/^the /i, '') + '[^.;,]{0,25}\\b' + WB.ENTER_RE, 'i').test(actD));
+    return { first: who.filter((nm) => !late.includes(nm)), late };
+  };
   /* 组内容指纹：片段审批绑定到生成时的内容版本 */
-  WB.groupHash = function (st, gid) { const g = WB.group(st, gid); return WB.sha8(JSON.stringify(g.shots.map((id) => { const s = WB.shot(st, id); return [s.duration, s.focal, s.aperture, s.move, s.lighting, s.dialogue.map((d) => [d.t0, d.t1, d.en]), s.rules, s.actionEn]; })) + JSON.stringify(st.decisions.OPTICS || '') + JSON.stringify(g.firstFrameRef ? [g.firstFrameRef.sha || g.firstFrameRef.sha8 || '', g.firstFrameRef.from] : '')); };
+  /* 组指纹只收语义内容：光学包只取 value（Codex 独立 v0.7 P1-1：同值确认改了 by/time 却让指纹失配）；
+     提示词里勾选的参考图进指纹（P1-2）：未初始化与全不选等价，都记作 [] */
+  WB.thumbKeys = (st, gid) => { const sel = (st.thumbSel || {})[gid] || {}; return Object.keys(sel).filter((k) => sel[k]).sort(); };
+  WB.setThumb = function (st, gid, name, on, who) {
+    const g = WB.group(st, gid); if (!g) return { ok: false, msg: '无此组' };
+    if (g.lock === '锁定') return { ok: false, msg: '组已锁定：勾选参考图会改提示词，需先由导演解锁' };
+    st.thumbSel = st.thumbSel || {}; st.thumbSel[gid] = st.thumbSel[gid] || {};
+    if (!!st.thumbSel[gid][name] === !!on) return { ok: true, invalidates: [] };
+    const h0 = WB.groupHash(st, gid); st.thumbSel[gid][name] = !!on;
+    const inv = WB.groupHash(st, gid) !== h0 ? WB.touchGroup(st, gid) : [];
+    WB.logEntry(st, { who, text: `${on ? '勾选' : '取消'}参考图 ${name}`, scope: g.name, target: gid, variable: '参考图', before: on ? '不附' : '附', after: on ? '附' : '不附', status: '已应用', invalidates: inv });
+    return { ok: true, invalidates: inv };
+  };
+  WB.groupHash = function (st, gid) { const g = WB.group(st, gid); return WB.sha8(JSON.stringify(g.shots.map((id) => { const s = WB.shot(st, id); return [s.duration, s.focal, s.aperture, s.move, s.lighting, s.position, s.dialogue.map((d) => [d.t0, d.t1, d.en]), s.rules, s.actionEn]; })) + JSON.stringify((st.decisions.OPTICS || {}).value || '') + JSON.stringify(WB.thumbKeys(st, gid)) + JSON.stringify(g.firstFrameRef ? [g.firstFrameRef.sha || g.firstFrameRef.sha8 || '', g.firstFrameRef.from] : '')); };
   WB.registerClip = function (st, gid, who, opt) {
     const g = WB.group(st, gid); const n = g.clips.length + 1; const v = String(n).padStart(2, '0');
     const sha = opt && opt.sha8 || WB.sha8(gid + n + nowStr());
@@ -758,7 +794,9 @@
     en(''); en('CAMERA');
     shots.forEach((s, i) => {
       const p = s.position; const mv = s.move.segments && s.move.segments.length > 1 ? s.move.segments.map((x) => `${x.t0}–${x.t1}s ${WB.MOVE_EN[x.move] || x.move}`).join(', then ') : (WB.MOVE_EN[s.move.primary] || s.move.primary) + (s.move.secondary ? ' + ' + (WB.MOVE_EN[s.move.secondary] || s.move.secondary) : '');
-      en(`${lab[i]}: ${mv}${p.height ? `; camera height ${p.height} m` : ''}${p.distance ? `; about ${p.distance} m from subject` : ''}.`);
+      const SZ = { 中全: 'medium-full shot', 中景: 'medium shot', 中近: 'medium close-up', 近: 'close-up', 全: 'full shot', 特写: 'close-up' }; const AN = { 平视: 'at eye level', 平视略低: 'slightly below eye level' };
+      const sz = p.size ? p.size.split('→').map((z) => SZ[z]).filter(Boolean).join(' moving to a ') : ''; const an = AN[p.angle] || '';
+      en(`${lab[i]}: ${sz ? sz + (an ? ' ' + an : '') + '; ' : an ? an + '; ' : ''}${mv}${p.height ? `; camera height ${p.height} m` : ''}${p.distance ? `; about ${p.distance} m from subject` : ''}.`);
     });
     en(''); en('LIGHTING');
     const GL = Object.assign({}, sc.lighting, (g.lighting && g.lighting.inherit === '组覆盖') ? g.lighting : {});
@@ -780,17 +818,14 @@
       const ch = g.chain || []; const inChain = ch.includes(s.id) && i < shots.length - 1 && ch.includes(shots[i + 1].id);
       en(`${t0.toFixed(1)}–${t1.toFixed(1)}s | ${lab[i]}${i < shots.length - 1 ? (inChain ? ' | NO CUT: the same camera move flows straight on into ' + lab[i + 1].replace(/^Shot \d+, /, '') : ' | HARD CUT after') : ''}`);
       let act = s.actionEn; (s.rules || []).forEach((r) => { if (r.notInFrame) { const nm = WB.NAME_EN[r.notInFrame]; if (nm) act += ` ${nm[0].toUpperCase() + nm.slice(1)} is not visible in this shot.`; else { note('规则（无英文映射，未写入正文）：' + r.notInFrame + ' 不入画'); pending.push({ k: s.id + ' rule:' + r.notInFrame, state: '规则待补英文' }); } } });
-      const who = []; s.assets.forEach((a) => { if (a.inFrame === false) return; const id = a.id || WB.tmpCode(a.name); const d = WB.CHAR_EN[id]; if (d) { const nm = d.split(':')[0].replace(/^The /, 'the '); if (!who.includes(nm)) who.push(nm); } });
-      const actD = WB.deName(s.actionEn); const offS = s.dialogue.filter((d) => d.type === '画外').map((d) => WB.deName(WB.NAME_EN[d.speaker] || d.speaker).toLowerCase());
-      const late = who.filter((nm) => offS.includes(nm.toLowerCase()) || new RegExp(nm.replace(/^the /i, '') + "[^.;,]{0,25}\\b(enters|entering|steps into|steps in|walks into|walks in|comes into|comes in|arrives|appears)", 'i').test(actD));
-      const first = who.filter((nm) => !late.includes(nm));
+      const { first, late } = WB.openers(st, s);
       if (first.length) en(`Opens on: ${first.join(', ')} already in frame${late.length ? `; ${late.join(', ')} not yet visible` : ''}.`);
       en(act.replace(/\b(steadicam|Steadicam)\b/g, 'stabilized rig'));
       if (s.sound && WB.SOUND_EN[s.sound]) en('Sound: ' + WB.SOUND_EN[s.sound] + '.');
       s.dialogue.forEach((d) => {
         const spk = 'the ' + (WB.SPK_EN[d.speaker] || d.speaker);
         const off = d.type === '画外' ? ' (off-screen voice, heard before he is visible; no lips on screen)' : d.type === '机器播报' ? ' (synthetic broadcast voice)' : '';
-        en(`At +${d.t0.toFixed(1)}s to +${d.t1.toFixed(1)}s ${spk} says${off}: "${d.en}"`); note(`${d.zh}（${d.type}｜文学 L${(st.data.literary.dialogue.find((x) => x.id === d.ref) || {}).line}）`);
+        en(`At +${d.t0.toFixed(1)}s to +${d.t1.toFixed(1)}s ${spk} says${off}: \u0001"${d.en}"\u0002`); note(`${d.zh}（${d.type}｜文学 L${(st.data.literary.dialogue.find((x) => x.id === d.ref) || {}).line}）`);
         if (d.t1 > s.duration + 0.05) { note(`注意：估算念完需到 +${d.t1}″，超过本镜 ${s.duration}″`); cmt(`TIMING RISK: this line is estimated to end at +${d.t1}s, after the ${s.duration}s shot ends; draft only.`); pending.push({ k: s.id + ' dialogue timing', state: '台词溢出' }); }
         else if (d.timingRisk && !WB.heardOk(d)) { cmt(`TIMING RISK: hand-set end +${d.t1}s is shorter than the ${d.est}s estimate; needs a read-through.`); pending.push({ k: s.id + ' dialogue timing', state: '待试听' }); }
       });
@@ -839,13 +874,19 @@
   };
   /* 无副作用的组装＋硬校验：复制、就绪徽标、DRAFT 头共用这一份结果 */
   /* 规范检查的上下文：对象内容 hash＋该对象的人工签核（签核绑定 hash，内容一变就失效） */
+  /* 规则库版本：由当前 RULESET 的 id＋sha8＋判法算出（Codex 第 5 轮 R8：RULESET_VER 从未赋值） */
+  WB.ruleFp = (r) => WB.sha8([r.id, r.sha8, r.quote, r.rule, r.check, r.severity].join('|'));
+  WB.rulesetVer = function () { const R = WB.RULESET || []; if (WB._rsvRef !== R) { WB._rsvRef = R; WB._rsv = WB.sha8(R.map(WB.ruleFp).join(',')); } return WB._rsv; };
   WB.lintCtx = function (st, target, scope, ctx) {
-    const obj = (WB.RULESET_VER || '') + '|' + (target === 'prompt' ? ctx.text : target === 'acting' ? JSON.stringify(ctx.g.acting || null) + WB.groupHash(st, ctx.g.id) : target === 'gapPrompt' ? ctx.prompt : target === 'stage0' ? JSON.stringify(st.data.scene.diagnosis) : '');
+    const obj = WB.rulesetVer() + '|' + (target === 'prompt' ? ctx.text : target === 'acting' ? JSON.stringify(ctx.g.acting || null) + WB.groupHash(st, ctx.g.id) : target === 'gapPrompt' ? ctx.prompt : target === 'stage0' ? JSON.stringify(st.data.scene.diagnosis) : '');
     return Object.assign(ctx, { hash: WB.sha256(String(obj)).slice(0, 16), signs: (st.signs || {})[target + ':' + scope] || {} });
   };
   WB.signRule = function (st, key, ruleId, who, on, hash) {
     st.signs = st.signs || {}; st.signs[key] = st.signs[key] || {};
-    if (on) st.signs[key][ruleId] = { who, hash, time: nowStr() }; else delete st.signs[key][ruleId];
+    const rr = (WB.RULESET || []).find((r) => r.id === ruleId);
+    /* 人工核对项（manual:）任何岗位可签；自动检查的「提醒」只能由导演接受；error 级不能被接受（Codex 独立 v0.7 P1-4） */
+    if (on && rr && String(rr.check).split(':')[0] !== 'manual') { if (rr.severity === 'error') return { ok: false, msg: '违反级规则不能被接受，只能改内容' }; if (who !== '导演') return { ok: false, msg: '自动检查的提醒只能由导演接受' }; }
+    if (on) st.signs[key][ruleId] = { who, hash, ruleFp: rr ? WB.ruleFp(rr) : null, time: nowStr() }; else delete st.signs[key][ruleId];
     WB.logEntry(st, { who, text: `${on ? '签核' : '撤销签核'} ${ruleId}（${key}）`, scope: '规范检查', target: key, variable: ruleId, before: '—', after: on ? '已核' : '—', status: '已应用' });
     return { ok: true };
   };
@@ -886,10 +927,11 @@
     if (!leak.length && WB.CJK.test(text)) errors.push('内部错误：复制文本仍含中文');
     const fb = text.match(WB.FORBIDDEN); if (fb) errors.push('正文含禁用名称「' + fb[0] + '」（人名/品牌/片名）');
     const approved = WB.groupLines(st, g); const nb = WB.stripApproved(text.split('\n').filter((l) => !/^\/\//.test(l)).join('\n'), approved).match(WB.NAMES_RE); if (nb) errors.push('非对白正文含人名／地名「' + nb[0] + '」');
-    const bodyT = text.split('\n').filter((l) => !/^\/\//.test(l)).join('\n'); approved.forEach((l) => { const n = bodyT.split('"' + l + '"').length - 1; if (n !== 1) errors.push(`批准台词在正文出现 ${n} 次（应恰好 1 次）：${l.slice(0, 30)}`); });
-    (bodyT.match(/"([^"]+)"/g) || []).map((m) => m.slice(1, -1)).filter((q) => q !== 'Opens on' && q !== 'not yet visible' && !approved.includes(q)).forEach((q) => errors.push('正文有非本组批准台词的引号文字：' + q.slice(0, 30)));
-    const lit = st.data.literary.lines.map((l) => l.text).join('\n');
-    const q = (text.match(/says[^:\n]*: "([^"]+)"/g) || []).map((m) => m.replace(/^[^"]*"/, '').replace(/"$/, '')).filter((l) => !lit.includes(l)); if (q.length) errors.push('台词不是文学本原句：' + q.join('｜'));
+    const bodyT = text.split('\n').filter((l) => !/^\/\//.test(l)).join('\n'); const apCnt = {}; approved.forEach((l) => { apCnt[l] = (apCnt[l] || 0) + 1; }); const apDesc = Object.keys(apCnt).sort((a, b) => b.length - a.length); { let rr = bodyT; apDesc.forEach((l) => { const n = rr.split('"' + l + '"').length - 1; rr = rr.split('"' + l + '"').join('[approved line]'); if (n !== apCnt[l]) errors.push(`批准台词在正文出现 ${n} 次（应为 ${apCnt[l]} 次）：${l.slice(0, 30)}`); }); } // 按对白条数计：同一句批准两次就应出现两次 // 长句先计并剔除：台词内的引文不重复计数
+    let restT = bodyT; apDesc.forEach((l) => { restT = restT.split('"' + l + '"').join('[approved line]'); }); // 先剔除批准台词（台词内部可含引号），再查其余引号文字
+    (restT.match(/"([^"]+)"/g) || []).map((m) => m.slice(1, -1)).filter((q) => q !== 'Opens on' && q !== 'not yet visible' && !approved.includes(q)).forEach((q) => errors.push('正文有非本组批准台词的引号文字：' + q.slice(0, 30)));
+    const lit = (WB.litLines ? WB.litLines(st) : st.data.literary.lines).map((l) => l.text).join('\n');
+    const q = (restT.match(/says[^:\n]*: "([^"]+)"/g) || []).map((m) => m.replace(/^[^"]*"/, '').replace(/"$/, '')).filter((l) => !lit.includes(l)); if (q.length) errors.push('台词不是文学本原句：' + q.join('｜'));
     let lint = null; if (WB.lint && WB.RULESET) lint = { prompt: WB.lint(WB.RULESET, 'prompt', WB.lintCtx(st, 'prompt', gid, { st, g, text })), acting: WB.lint(WB.RULESET, 'acting', WB.lintCtx(st, 'acting', gid, { st, g })) };
     return { g, p, hdr, text, errors, lint, sec };
   };

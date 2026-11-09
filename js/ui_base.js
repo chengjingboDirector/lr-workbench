@@ -33,12 +33,35 @@ const ico = {
 
 let storageOK = true; const HIST = [];
 function snap() { HIST.push(JSON.stringify(WB.serialize(st))); if (HIST.length > 30) HIST.shift(); }
-function save() { if (!storageOK) return; try { const cur = JSON.parse(localStorage.getItem(KEY) || 'null'); if (cur && cur.st && (cur.st.rev || 0) > (st.rev || 0) && cur.built === window.S04_DATA.built) { if (!save.warned) { save.warned = true; toast('另一个标签页有更新的数据：本页不覆盖，请刷新'); } return; } save.warned = false; localStorage.setItem(KEY, JSON.stringify({ built: window.S04_DATA.built, st: WB.serialize(st), ui: { tab: UI.tab, shot: UI.shot, group: UI.group, who: UI.who, mode: UI.mode, finalMode: UI.finalMode } })); } catch (e) { storageOK = false; toast('本地保存不可用：改动只保留在本页内存，请及时导出 JSON'); } }
+/* 多标签页（Codex 独立 v0.7 P1-5）：每次写盘带事务号 txn；本页记住上次同步到的 txn。
+   写盘前发现盘上的 txn 不是本页上次同步的那一个 → 另一页先写过：本页这笔不覆盖，先另存冲突备份，再切到对方数据并提示。
+   存储失败（P2）：不再永久放弃；每次改动都重试，恢复后提示。 */
+const SYNC = { txn: null, last: null };
+const newTxn = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+function saveUI() { try { localStorage.setItem(KEY + '-ui', JSON.stringify({ tab: UI.tab, shot: UI.shot, group: UI.group, who: UI.who, mode: UI.mode, finalMode: UI.finalMode })); } catch (e) { /* 界面偏好丢了不要紧 */ } }
+function writeSt(body) { const txn = newTxn(); localStorage.setItem(KEY, JSON.stringify({ built: window.S04_DATA.built, txn, st: JSON.parse(body) })); SYNC.txn = txn; SYNC.last = body; }
+function save() {
+  saveUI();
+  const body = JSON.stringify(WB.serialize(st)); if (body === SYNC.last && storageOK) return 'same'; /* 内容没变不写盘：不产生新事务号，也不触发别的标签页同步 */
+  try {
+    const cur = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (cur && cur.st && cur.built === window.S04_DATA.built && cur.txn && cur.txn !== SYNC.txn) {
+      const bk = KEY + '-conflict-' + Date.now(); try { localStorage.setItem(bk, JSON.stringify({ built: window.S04_DATA.built, why: '另一个标签页先保存', st: JSON.parse(body) })); } catch (e2) { /* 备份失败也不覆盖对方 */ }
+      st = WB.init(window.S04_DATA, window.REF_INDEX, cur.st); SYNC.txn = cur.txn; HIST.length = 0;
+      WB.logEntry(st, { who: '系统（多标签页）', text: '另一个标签页先保存了改动：本页这笔改动没有覆盖对方，已另存为冲突备份 ' + bk, scope: '—', target: '—', variable: '冲突', before: '—', after: '—', status: '已应用' });
+      toast('另一个标签页先保存了：本页这笔改动没有覆盖对方，已另存为冲突备份，页面已切到最新数据');
+      writeSt(JSON.stringify(WB.serialize(st))); return 'conflict';
+    }
+    writeSt(body);
+    if (!storageOK) { storageOK = true; toast('本地保存已恢复'); }
+    return 'ok';
+  } catch (e) { if (storageOK) toast('本地保存失败：改动只在本页内存里，下次改动会自动重试；请先导出 JSON'); storageOK = false; return 'fail'; }
+}
 function load() {
   let saved = null;
   let note = '';
-  try { const raw = localStorage.getItem(KEY); if (raw) { const o = JSON.parse(raw); if (o.built === window.S04_DATA.built && o.st && o.st.data) { saved = o.st; Object.assign(UI, o.ui || {}); } else note = '数据已重建，旧的本地改动已作废（可在旧导出 JSON 中查）'; } } catch (e) { saved = null; note = '本地缓存损坏，已隔离并从初始数据启动'; try { localStorage.setItem(KEY + '-corrupt-' + Date.now(), localStorage.getItem(KEY) || ''); } catch (e2) { storageOK = false; } }
-  try { st = WB.init(window.S04_DATA, window.REF_INDEX, saved); } catch (e) { st = WB.init(window.S04_DATA, window.REF_INDEX); note = '本地缓存与当前代码不兼容，已从初始数据启动'; }
+  try { const raw = localStorage.getItem(KEY); if (raw) { const o = JSON.parse(raw); if (o.built === window.S04_DATA.built && o.st && o.st.data) { saved = o.st; SYNC.txn = o.txn || null; Object.assign(UI, o.ui || {}); try { Object.assign(UI, JSON.parse(localStorage.getItem(KEY + '-ui') || '{}')); } catch (e3) { /* 忽略 */ } } else note = '数据已重建，旧的本地改动已作废（可在旧导出 JSON 中查）'; } } catch (e) { saved = null; note = '本地缓存损坏，已隔离并从初始数据启动'; try { localStorage.setItem(KEY + '-corrupt-' + Date.now(), localStorage.getItem(KEY) || ''); } catch (e2) { storageOK = false; } }
+  try { st = WB.init(window.S04_DATA, window.REF_INDEX, saved); if (saved) SYNC.last = JSON.stringify(WB.serialize(st)); } catch (e) { st = WB.init(window.S04_DATA, window.REF_INDEX); note = '本地缓存与当前代码不兼容，已从初始数据启动'; }
   if (note) setTimeout(() => toast(note), 300);
 }
 function imgFail(img) { const d = document.createElement('div'); d.className = 'ph'; d.textContent = '图片缺失：' + img.getAttribute('src'); img.replaceWith(d); }
@@ -65,7 +88,7 @@ function lampCounts() {
 }
 function blackbar(s, side) {
   const cam = s.fixed ? '固定' : moveTxt(s);
-  return `<div class="blackbar"><b>${esc(s.id)}_${side}</b> ｜ ${s.duration}″ ｜ ${esc(s.position.size || '')} ｜ ${esc(focalTxt(s))} ${esc(s.aperture.value || 'T2.8')} ｜ ${esc(cam)}</div>`;
+  return `<div class="blackbar"><b>${esc(s.id)}_${side}</b><span class="bbs num">${s.duration}″</span><div class="bbx">${esc(s.position.size || '')} · ${esc(focalTxt(s))} ${esc(s.aperture.value || 'T2.8')} · ${esc(cam)}</div></div>`;
 }
 function sketchBlock(s) {
   const sides = s.fixed ? ['in'] : ['in', 'out'];
@@ -85,33 +108,29 @@ function specSpan() {
 function renderTop() {
   const dg = st.data.scene.diagnosis; const ch = dg.chosen; const lc = lampCounts(); const g1 = WB.group(st, 'G1');
   $('#top').innerHTML = `
-    <div class="brand"><h1 class="brandh">第四场｜被扫描</h1><span class="lat">The Last Rain · Scene 04 ｜ Workbench</span></div>
-    <span class="proto" title="原型：验证流程用，不进正式交付">一次性试验品</span>
-    <div class="ctl">${ch ? `<span class="lamp ${ch.proxy ? 'warn' : 'ok'}"><span class="dot"></span>方向 ${esc(ch.option)}｜${ch.proxy ? '总监代选｜待导演确认' : '导演已确认'}</span><button class="btn sm ghost" data-act="tab" data-v="stage0">改选</button>` : '<span class="lamp bad"><span class="dot"></span>未选方向：拆解未解锁</span>'}</div>
+    <h1 class="brandh">第四场｜被扫描</h1>
+    ${ch ? `<button class="dirbtn" data-act="tab" data-v="stage0" title="去「诊断与方向」改选"><span class="dot ${ch.proxy ? 'warn' : 'ok'}"></span>方向 ${esc(ch.option)}<span class="dsep">·</span>${ch.proxy ? '<span class="dlong">总监代选，待导演确认</span><span class="dshort">代选待确认</span>' : '导演已确认'}</button>` : '<span class="dirbtn bad"><span class="dot bad"></span>未选方向</span>'}
     <div class="grow"></div>
-    <span class="lamp ok" title="已锁定/已批"><span class="dot"></span><span class="num">${lc.ok}</span></span><span class="lamp warn" title="草案/候选/待批"><span class="dot"></span><span class="num">${lc.warn}</span></span><span class="lamp bad" title="需确认/冲突/超限/红色检查"><span class="dot"></span><span class="num">${lc.bad}</span></span>
-    <div class="ctl"><label for="who">我是</label><select id="who">${WB.ROLES.map((r) => `<option ${r === UI.who ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
-    <div class="seg" role="group" aria-label="显示模式"><button data-act="mode" data-v="简" aria-pressed="${UI.mode === '简'}">简</button><button data-act="mode" data-v="专" aria-pressed="${UI.mode === '专'}">专</button></div>
-    <button class="btn sm proc" data-act="undo" title="撤销上一笔（Ctrl/⌘+Z）">撤销</button>
-    <button class="btn sm" data-act="final" aria-pressed="${UI.finalMode}" title="导演定稿模式：隐藏过程信息">${UI.finalMode ? '退出定稿模式' : '导演定稿模式'}</button>
-    <button class="btn sm only-narrow" data-act="toggleTree" aria-label="打开镜头树" aria-controls="tree" aria-expanded="false">${ico.tree}</button><button class="btn sm only-narrow" data-act="toggleSide" aria-label="打开资产栏" aria-controls="side" aria-expanded="false">${ico.side}</button>`;
+    <div class="counts" role="group" aria-label="状态计数"><span class="cnt ok" title="已锁定／已批"><span class="dot"></span>已定 <b class="num">${lc.ok}</b></span><span class="cnt warn" title="草案／候选／待批"><span class="dot"></span>待定 <b class="num">${lc.warn}</b></span><span class="cnt bad" title="需确认／冲突／超限／红色检查"><span class="dot"></span>需处理 <b class="num">${lc.bad}</b></span></div>
+    <div class="ctl who"><label for="who">我是</label><select id="who">${WB.ROLES.map((r) => `<option ${r === UI.who ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
+    <button class="btn sm only-narrow" data-act="toggleTree" aria-label="打开镜头树" aria-controls="tree" aria-expanded="${!!(document.getElementById('tree') && document.getElementById('tree').classList.contains('open'))}">${ico.tree}</button><button class="btn sm only-narrow" data-act="toggleSide" aria-label="打开资产栏" aria-controls="side" aria-expanded="${!!(document.getElementById('side') && document.getElementById('side').classList.contains('open'))}">${ico.side}</button>`;
   const q = WB.approvalQueue(st).filter((x) => x.proxy || x.value == null).length;
   $('#tabs').innerHTML = TABS.filter(([k]) => !UI.finalMode || FINAL_TABS.includes(k)).map(([k, zh, en]) => {
     const dis = k !== 'stage0' && !WB.unlocked(st);
-    return `<button role="tab" id="tab-${k}" aria-controls="main" tabindex="${UI.tab === k ? 0 : -1}" data-act="tab" data-v="${k}" aria-selected="${UI.tab === k}" ${dis ? 'disabled title="先在「诊断与方向」选一个方向"' : ''}>${zh}<span class="lat">${en}</span>${k === 'queue' && q ? `<span class="cnt num">${q}</span>` : ''}</button>`;
-  }).join('') + `<div class="vers proc" aria-label="版本指针"><span>文学 <b class="num">${esc(st.data.sources.literary.sha8)}</b></span><span>② <b class="num">${esc(st.data.sources.list2.sha8)}</b></span><span title="${esc(g1.version.note)}">组一现行 <b class="num">${esc(g1.version.current)}</b></span><span title="当前数据快照">数据 <b class="num">${esc(WB.dataSha(st))}</b></span>${specSpan()}</div>`;
+    return `<button role="tab" id="tab-${k}" aria-controls="main" tabindex="${UI.tab === k ? 0 : -1}" data-act="tab" data-v="${k}" aria-selected="${UI.tab === k}" ${dis ? 'disabled title="先在「诊断与方向」选一个方向"' : ''}>${zh}${k === 'queue' && q ? `<span class="cnt num">${q}</span>` : ''}</button>`;
+  }).join('') + `<div class="tabtools"><button class="btn sm ghost proc" data-act="undo" title="撤销上一笔（Ctrl/⌘+Z）">撤销</button><button class="btn sm ghost" data-act="final" aria-pressed="${UI.finalMode}" title="导演定稿视图：隐藏过程信息">${UI.finalMode ? '退出定稿视图' : '定稿视图'}</button></div>`;
   document.body.classList.toggle('final', UI.finalMode); document.body.classList.toggle('simple', UI.mode === '简');
 }
 function renderTree() {
   const ch = checksBy(); const total = WB.sceneSec(st); const win = st.data.scene.window;
-  let h = `<div class="tthead"><h2 class="tt">镜头树 <span class="lat">Shots</span></h2><button class="btn sm ghost only-narrow panel-close" data-act="toggleTree" aria-label="关闭镜头树">关闭</button></div><button class="tnode" data-act="selScene" aria-current="${!UI.group}"><b>S04 全场</b><span class="sec num ${total < win.min || total > win.max ? 'bad' : ''}">${total}″</span></button><div class="muted" style="font-size:11px;padding:0 8px 4px">窗口 ${win.min}–${win.max}″ · 中心 ${win.center}″</div>`;
+  let h = `<div class="tthead"><h2 class="tt">镜头树</h2><button class="btn sm ghost only-narrow panel-close" data-act="toggleTree" aria-label="关闭镜头树">关闭</button></div><button class="tnode" data-act="selScene" aria-current="${!UI.group}"><b>S04 全场</b><span class="sec num ${total < win.min || total > win.max ? 'bad' : ''}">${total}″</span></button><div class="muted" style="font-size:13px;padding:0 8px 4px">窗口 ${win.min}–${win.max}″ · 中心 ${win.center}″</div>`;
   groups().forEach((g) => {
     const sec = WB.groupSec(st, g); const over = sec > WB.MAX_GROUP; const b = WB.boundaryCheck(st, g.id);
     h += `<button class="tnode g" data-act="selGroup" data-v="${g.id}" aria-current="${UI.group === g.id && !UI.shot}">${esc(g.name)} ${g.lock === '锁定' ? chip('锁定') : ''}${!b.ok ? '<span class="flag" style="background:var(--bad)" title="首尾状态不衔接"></span>' : ''}<span class="sec num ${over ? 'bad' : ''}" title="${over ? '超过 30″：Seedance 单段上限' : ''}">${sec}″${over ? ' 超' : ''}</span></button>`;
     h += `<div class="gbar" title="${sec}/30″"><i class="${over ? 'bad' : ''}" style="width:${Math.min(100, sec / 30 * 100)}%"></i></div>`;
     g.shots.forEach((id) => {
       const s = S(id); const c = ch[id] || []; const reds = c.filter((x) => x.level === '红'); const jump = c.some((x) => x.type === '光向跳');
-      h += `<button class="tnode s" data-act="selShot" data-v="${id}" aria-current="${UI.shot === id}"><span class="num">${short(id)}</span>${s.lock === '锁定' ? '<span title="已锁定" class="dot ok"></span>' : ''}${reds.length ? `<span class="flag" style="background:var(--bad)" title="${esc(reds.map((x) => x.type).join('、'))}"></span>` : ''}${jump ? '<span class="flag" style="background:var(--warn)" title="光向跳"></span>' : ''}${s.protect ? '<span class="muted" style="font-size:10px" title="②「勿砍」戏核镜">核</span>' : ''}<span class="sec num">${s.duration}″</span></button>`;
+      h += `<button class="tnode s" data-act="selShot" data-v="${id}" aria-current="${UI.shot === id}"><span class="num">${short(id)}</span>${s.lock === '锁定' ? '<span title="已锁定" class="dot ok"></span>' : ''}${reds.length ? `<span class="flag" style="background:var(--bad)" title="${esc(reds.map((x) => x.type).join('、'))}"></span>` : ''}${jump ? '<span class="flag" style="background:var(--warn)" title="光向跳"></span>' : ''}${s.protect ? '<span class="muted" style="font-size:13px" title="②「勿砍」戏核镜">核</span>' : ''}<span class="sec num">${s.duration}″</span></button>`;
     });
   });
   $('#tree').innerHTML = h;
@@ -120,7 +139,7 @@ function renderSide() {
   const sid = UI.shot || WB.group(st, UI.group || 'G1').shots[0]; const s = S(sid); const gaps = WB.gaps(st);
   /* 只有已批且已落地才算「有」：缺 N 含待批与待落地（Codex 第 2 轮 P1-6） */
   const missing = gaps; const pend = gaps.filter((g) => g.status !== '缺');
-  let h = `<div class="tthead"><h2 class="tt">本镜 REF <span class="lat">${esc(short(s.id))}</span></h2><button class="btn sm ghost only-narrow panel-close" data-act="toggleSide" aria-label="关闭资产栏">关闭</button></div>`;
+  let h = `<div class="tthead"><h2 class="tt">本镜 REF <span class="muted num">${esc(short(s.id))}</span></h2><button class="btn sm ghost only-narrow panel-close" data-act="toggleSide" aria-label="关闭资产栏">关闭</button></div>`;
   s.assets.filter((a) => a.inFrame !== false).forEach((a) => {
     const t = WB.assetStatus(st, a); const cls = t.state === '已批' ? '' : t.state === '缺' ? 'miss' : 'pend';
     h += `<button class="ref ${cls}" ${t.state !== '已批' ? `data-act="gap" data-v="${esc(WB.gapKey(a))}"` : 'disabled'}><span class="rid">${esc(a.id || '待补码')}</span><span>${esc(a.id ? '@' + a.state : a.name)}<br><span class="muted">${esc(a.view)}${a.id ? ' · ' + esc(st.data.registryNames[a.id] || '') : ''}</span></span><span class="st">${chip(t.type ? t.type : t.state, t.state === '缺' ? 'bad' : t.state === '已批' ? 'ok' : 'warn')}</span></button>`;
@@ -129,8 +148,10 @@ function renderSide() {
   if (ff && g.shots[0] === s.id) h += `<div class="ref ${sc(ff.status) === 'bad' ? 'miss' : 'pend'}"><span class="rid">首帧</span><span>${esc(ff.from)}<br><span class="muted">${esc(ff.file.split('/').pop())}</span></span><span class="st">${chip(ff.status)}</span></div>`;
   h += `<h2 class="tt">缺资产 ${missing.length ? `<span class="missing num" title="还没有「已批且已落地」REF 的项（含待批），按首次出现排序">缺 ${missing.length}</span>` : ''} ${pend.length ? chip('其中待批 ' + pend.length, 'warn') : ''}</h2>`;
   if (!gaps.length) h += '<div class="empty">没有缺口：全部 REF 已批</div>';
-  gaps.forEach((x) => { h += `<button class="gap" data-act="gap" data-v="${esc(x.key)}"><span class="chip gt ${x.status === '缺' ? 'bad' : 'warn'}">${esc(x.type)}</span> <b>${esc(x.id || '')}</b> ${esc(x.name)} <span class="muted">@${esc(x.state)}·${esc(x.view)}｜首见 ${esc(short(x.shots[0]))}${x.shots.length > 1 ? ` 等 ${x.shots.length} 镜` : ''}</span>${x.status === '待批' ? ' ' + chip('已入库｜待批', 'warn') : ''}</button>`; });
-  h += `<p class="muted proc" style="font-size:11px;margin-top:12px">只有「已批」算有图。命名：assets/REF/&lt;ID&gt;/&lt;ID&gt;_&lt;状态&gt;_&lt;视角&gt;_v01_cA.png；选定后去掉 _cX，落选进 _候选存档/（浏览器不能挪文件，操作进后台队列，由 tools/apply_ops.py 执行）。</p>`;
+  const gapRow = (x) => `<button class="gap" data-act="gap" data-v="${esc(x.key)}"><span class="chip gt ${x.status === '缺' ? 'bad' : 'warn'}">${esc(x.type)}</span> <b>${esc(x.id || '')}</b> ${esc(x.name)} <span class="muted">@${esc(x.state)}·${esc(x.view)}｜首见 ${esc(short(x.shots[0]))}${x.shots.length > 1 ? ` 等 ${x.shots.length} 镜` : ''}</span>${x.status === '待批' ? ' ' + chip('已入库｜待批', 'warn') : ''}</button>`;;
+  h += gaps.slice(0, 5).map(gapRow).join('');
+  if (gaps.length > 5) h += `<details class="more gaps"><summary>其余 ${gaps.length - 5} 项</summary>${gaps.slice(5).map(gapRow).join('')}</details>`;
+  h += `<p class="muted proc" style="font-size:13px;margin-top:12px">只有「已批」算有图。命名：assets/REF/&lt;ID&gt;/&lt;ID&gt;_&lt;状态&gt;_&lt;视角&gt;_v01_cA.png；选定后去掉 _cX，落选进 _候选存档/（浏览器不能挪文件，操作进后台队列，由 tools/apply_ops.py 执行）。</p>`;
   $('#side').innerHTML = h;
 }
 function curVal(sid, field) {
@@ -152,7 +173,7 @@ function editBar() {
     </div>`;
   }
   const unseen = WB.unseenFor(st, UI.who);
-  return `<div class="editbar"><form class="editbox" data-form="edit" autocomplete="off"><label for="editInput" class="lat">白话改 Edit</label><input id="editInput" placeholder="一句白话，例如：C005 改 2.5 秒（回车预览，按 / 聚焦）" value="${esc(UI.pendingText)}"><span class="muted" style="font-size:12px;white-space:nowrap">以「${esc(UI.who)}」</span><button class="btn pri" type="submit">预览</button></form>
+  return `<div class="editbar"><form class="editbox" data-form="edit" autocomplete="off"><label for="editInput" class="lat">白话改 Edit</label><input id="editInput" placeholder="一句白话，例如：C005 改 2.5 秒（回车预览，按 / 聚焦）" value="${esc(UI.pendingText)}"><span class="muted" style="font-size:13px;white-space:nowrap">以「${esc(UI.who)}」</span><button class="btn pri" type="submit">预览</button></form>
     <div class="hints">${['前三镜快一点', 'C005 改 2.5 秒', 'C010 焦距 85', '组二节奏放慢', '这里别看见诺亚', 'C004 光再柔一点'].map((x) => `<button class="chip" data-act="hint" data-v="${esc(x)}">${esc(x)}</button>`).join('')}</div>
     ${unseen.length ? `<div class="alert warn row"><span>其他人有 <b class="num">${unseen.length}</b> 处改动你还没看：${esc(unseen.slice(-3).map((e) => e.who + '·' + e.text).join('；'))}</span><button class="btn sm" data-act="ack">标为已读</button></div>` : ''}${res}</div>`;
 }

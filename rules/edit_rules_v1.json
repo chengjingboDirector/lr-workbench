@@ -1,0 +1,570 @@
+{
+ "version": "edit_rules_v1",
+ "proxyMark": "总监代选｜待导演确认",
+ "crews": {
+  "导演": {
+   "layers": [
+    "rhythm",
+    "rules"
+   ],
+   "label": "导演",
+   "scope": "讲戏、表演节奏、分镜逻辑、运镜逻辑、导演约束"
+  },
+  "美术": {
+   "layers": [
+    "inside",
+    "env",
+    "sound"
+   ],
+   "label": "美术／场景",
+   "scope": "场景、场内、场外环境、群演、机械（声音暂挂此处）"
+  },
+  "摄影": {
+   "layers": [
+    "camera"
+   ],
+   "label": "摄影",
+   "scope": "镜头语言、画幅、景别、焦距、镜头类型、滤镜、画面呈现"
+  },
+  "灯光": {
+   "layers": [
+    "light"
+   ],
+   "label": "灯光",
+   "scope": "光源和氛围"
+  },
+  "表演": {
+   "layers": [
+    "perf",
+    "blocking"
+   ],
+   "label": "表演",
+   "scope": "情绪、走位、距离"
+  }
+ },
+ "layers": {
+  "camera": {
+   "name": "摄影",
+   "crew": "摄影"
+  },
+  "light": {
+   "name": "灯光",
+   "crew": "灯光"
+  },
+  "perf": {
+   "name": "表演与情绪",
+   "crew": "表演"
+  },
+  "blocking": {
+   "name": "场内·走位与距离",
+   "crew": "表演"
+  },
+  "inside": {
+   "name": "场内·道具与陈设",
+   "crew": "美术"
+  },
+  "env": {
+   "name": "场外环境",
+   "crew": "美术"
+  },
+  "sound": {
+   "name": "声音氛围",
+   "crew": "美术"
+  },
+  "rules": {
+   "name": "规则与压迫",
+   "crew": "导演"
+  },
+  "rhythm": {
+   "name": "节奏与分镜逻辑",
+   "crew": "导演"
+  }
+ },
+ "fields": {
+  "rhythm.dur": {
+   "layer": "rhythm",
+   "label": "镜头时长",
+   "unit": "秒",
+   "step": 0.5,
+   "kind": "duration",
+   "synonyms": {
+    "down": [
+     "太急",
+     "太快",
+     "赶",
+     "急"
+    ],
+    "up": [
+     "拖",
+     "太慢",
+     "太长"
+    ]
+   },
+   "note": "放慢＝加时长；加快＝减时长；每档 0.5″"
+  },
+  "rhythm.pause": {
+   "layer": "rhythm",
+   "label": "停顿",
+   "unit": "秒",
+   "tiers": [
+    "0",
+    "+0.5",
+    "+1.0",
+    "+1.5"
+   ],
+   "cur": "0",
+   "kind": "pause",
+   "synonyms": {
+    "up": [
+     "停顿更长",
+     "停久",
+     "多停",
+     "留白",
+     "停顿长"
+    ],
+    "down": [
+     "停顿短",
+     "别停"
+    ]
+   },
+   "en": {
+    "0": "",
+    "+0.5": "hold the look for an extra half second before the next action",
+    "+1.0": "hold the look for about one extra second before the next action",
+    "+1.5": "hold the look for about one and a half extra seconds before the next action"
+   }
+  },
+  "perf.intensity": {
+   "layer": "perf",
+   "label": "情绪表达",
+   "tiers": [
+    "克制",
+    "中",
+    "外放"
+   ],
+   "kind": "tier",
+   "synonyms": {
+    "down": [
+     "压",
+     "收",
+     "克制",
+     "太演",
+     "含蓄",
+     "内敛",
+     "收着"
+    ],
+    "up": [
+     "放开",
+     "外放",
+     "激动",
+     "更猛",
+     "不够激烈"
+    ]
+   },
+   "en": {
+    "克制": "restrained performance: minimal facial movement, emotion held behind the eyes, breath controlled",
+    "中": "measured performance: emotion readable but contained, no big gestures",
+    "外放": "open performance: visible strain in face and breath, larger body reactions"
+   }
+  },
+  "light.exposure": {
+   "layer": "light",
+   "label": "整个画面的亮度",
+   "tiers": [
+    "暗",
+    "中",
+    "亮"
+   ],
+   "cur": "中",
+   "kind": "tier",
+   "synonyms": {
+    "down": [
+     "太亮",
+     "压暗",
+     "暗一点"
+    ],
+    "up": [
+     "太暗",
+     "提亮",
+     "亮一点",
+     "看不清"
+    ]
+   },
+   "en": {
+    "暗": "overall exposure one step darker: deeper blacks, only wet edges and rain catch light",
+    "中": "",
+    "亮": "overall exposure one step brighter while keeping the low-key night look"
+   }
+  },
+  "light.ratio": {
+   "layer": "light",
+   "label": "亮处和暗处的差别",
+   "tiers": [
+    "1:4",
+    "1:8",
+    "1:16"
+   ],
+   "cur": "1:8",
+   "kind": "tier",
+   "synonyms": {
+    "up": [
+     "反差大",
+     "对比强",
+     "更硬"
+    ],
+    "down": [
+     "反差小",
+     "柔一点",
+     "对比弱"
+    ]
+   },
+   "en": {
+    "1:4": "softer contrast, about 1:4 between lit edges and shadow",
+    "1:8": "",
+    "1:16": "harder contrast, about 1:16: lit edges bright, shadows near black"
+   }
+  },
+  "light.key": {
+   "layer": "light",
+   "label": "照在人身上的灯",
+   "tiers": [
+    "弱",
+    "中",
+    "强"
+   ],
+   "cur": "中",
+   "kind": "tier",
+   "synonyms": {},
+   "en": {
+    "弱": "the light falling on the characters is one step weaker; faces stay mostly in shadow",
+    "中": "",
+    "强": "the light falling on the characters is one step stronger"
+   }
+  },
+  "env.rain": {
+   "layer": "env",
+   "label": "雨势",
+   "tiers": [
+    "-1",
+    "0",
+    "+1",
+    "+2"
+   ],
+   "cur": "0",
+   "kind": "tier",
+   "rel": true,
+   "base": "W2（数 FX-04；档名待核）",
+   "synonyms": {
+    "up": [
+     "雨大",
+     "雨再大",
+     "雨不够大",
+     "暴雨",
+     "加大雨"
+    ],
+    "down": [
+     "雨小",
+     "雨太大",
+     "细雨"
+    ]
+   },
+   "en": {
+    "0": "",
+    "-1": "rain one step lighter than the base: thinner streaks, fewer splashes",
+    "+1": "rain one step heavier than the base: denser black-rain streaks, harder splashes on metal and puddles",
+    "+2": "rain two steps heavier than the base: a downpour, sheets of black rain, heavy splashes and runoff"
+   },
+   "link": [
+    "light.rainVolume"
+   ],
+   "endState": true
+  },
+  "env.fog": {
+   "layer": "env",
+   "label": "雾",
+   "tiers": [
+    "无",
+    "薄",
+    "浓"
+   ],
+   "cur": "无",
+   "kind": "tier",
+   "synonyms": {
+    "up": [
+     "雾",
+     "加雾",
+     "烟"
+    ],
+    "down": [
+     "去雾",
+     "太雾"
+    ]
+   },
+   "en": {
+    "无": "",
+    "薄": "thin haze in the air, light shafts faintly visible",
+    "浓": "dense haze, distant structures fade into grey"
+   }
+  },
+  "env.robots": {
+   "layer": "env",
+   "label": "背景施工机器人数量",
+   "tiers": [
+    "0",
+    "2",
+    "4",
+    "6"
+   ],
+   "cur": null,
+   "kind": "tier",
+   "match": {},
+   "synonyms": {
+    "up": [
+     "机器人多",
+     "施工机器人多",
+     "机器人太少",
+     "增加施工机器人",
+     "机器人多一些"
+    ],
+    "down": [
+     "机器人少",
+     "机器人太多"
+    ]
+   },
+   "en": {
+    "0": "no construction robots in the background",
+    "2": "about two construction robots working in the background",
+    "4": "about four construction robots cutting and hauling in the background",
+    "6": "about six construction robots cutting and hauling across the background"
+   }
+  },
+  "env.amplitude": {
+   "layer": "env",
+   "label": "背景机械动作幅度",
+   "tiers": [
+    "小",
+    "中",
+    "大"
+   ],
+   "cur": "中",
+   "kind": "tier",
+   "match": {},
+   "synonyms": {
+    "up": [
+     "幅度大",
+     "动作大",
+     "幅度太小",
+     "动作幅度大"
+    ],
+    "down": [
+     "幅度小",
+     "动作小"
+    ]
+   },
+   "en": {
+    "小": "background machinery moves slowly with small motions",
+    "中": "",
+    "大": "background machinery moves with large sweeping motions"
+   }
+  },
+  "env.crowd": {
+   "layer": "env",
+   "label": "群演密度与激烈程度",
+   "tiers": [
+    "稀",
+    "中",
+    "密"
+   ],
+   "cur": "中",
+   "kind": "tier",
+   "match": {},
+   "synonyms": {
+    "up": [
+     "群戏不够激烈",
+     "群演多",
+     "回收者多",
+     "回收队多",
+     "更激烈",
+     "群戏"
+    ],
+    "down": [
+     "群演少",
+     "回收者少"
+    ]
+   },
+   "en": {
+    "稀": "fewer background figures, sparse movement",
+    "中": "",
+    "密": "more reclaimers moving through the background with urgent, aggressive movement"
+   }
+  },
+  "light.rainVolume": {
+   "layer": "light",
+   "label": "雨里的光（体积雨）",
+   "tiers": [
+    "少",
+    "中",
+    "多"
+   ],
+   "cur": "中",
+   "kind": "tier",
+   "derived": true,
+   "en": {
+    "少": "less light caught in the rain",
+    "中": "",
+    "多": "denser volumetric rain catching more of the backlight"
+   }
+  },
+  "camera.move": {
+   "layer": "camera",
+   "label": "运镜速度",
+   "tiers": [
+    "慢",
+    "中",
+    "快"
+   ],
+   "cur": "中",
+   "kind": "tier",
+   "synonyms": {
+    "down": [
+     "运镜太快",
+     "晃",
+     "稳一点",
+     "慢一点"
+    ],
+    "up": [
+     "运镜太慢",
+     "快一点"
+    ]
+   },
+   "en": {
+    "慢": "camera moves more slowly and steadily",
+    "中": "",
+    "快": "camera moves faster, more urgent"
+   }
+  },
+  "camera.filter": {
+   "layer": "camera",
+   "label": "柔光滤镜强弱",
+   "tiers": [
+    "无",
+    "1/8",
+    "1/4"
+   ],
+   "cur": "1/8",
+   "kind": "tier",
+   "mount": true,
+   "synonyms": {
+    "down": [
+     "太柔",
+     "太糊",
+     "锐一点"
+    ],
+    "up": [
+     "柔一点",
+     "雾化"
+    ]
+   },
+   "en": {
+    "无": "no diffusion filter; crisp highlights",
+    "1/8": "subtle black-mist diffusion: soft highlights, gentle halation",
+    "1/4": "stronger black-mist diffusion: blooming highlights, visible halation"
+   }
+  },
+  "sound.ambience": {
+   "layer": "sound",
+   "label": "环境声",
+   "tiers": [
+    "轻",
+    "中",
+    "重"
+   ],
+   "cur": "中",
+   "kind": "tier",
+   "synonyms": {
+    "up": [
+     "声音大",
+     "雨声大",
+     "更吵"
+    ],
+    "down": [
+     "声音小",
+     "安静"
+    ]
+   },
+   "en": {
+    "轻": "ambient rain and machinery quieter",
+    "中": "",
+    "重": "ambient rain and machinery louder and heavier"
+   }
+  }
+ },
+ "ambiguous": [
+  {
+   "re": {},
+   "options": [
+    [
+     "light.exposure",
+     "暗",
+     "整个画面暗一点"
+    ],
+    [
+     "light.ratio",
+     "1:16",
+     "亮处和暗处差别更大"
+    ],
+    [
+     "light.key",
+     "弱",
+     "照在人身上的灯暗一点"
+    ]
+   ]
+  },
+  {
+   "re": {},
+   "options": [
+    [
+     "light.exposure",
+     "亮",
+     "整个画面亮一点"
+    ],
+    [
+     "light.key",
+     "强",
+     "照在人身上的灯亮一点"
+    ]
+   ]
+  }
+ ],
+ "guard": {
+  "dialogue": {},
+  "event": {},
+  "state": {},
+  "negate": {}
+ },
+ "gaze": {
+  "re": {},
+  "shots": [
+   "S04-C021",
+   "S04-C022"
+  ],
+  "maybe": [
+   "S04-C006",
+   "S04-C024",
+   "S04-C029"
+  ],
+  "evidence": {
+   "S04-C021": "文 L132–133",
+   "S04-C022": "文 L138"
+  }
+ },
+ "endStateShots": [
+  "S04-C027",
+  "S04-C028",
+  "S04-C029",
+  "S04-C030",
+  "S04-C031",
+  "S04-C032",
+  "S04-C033"
+ ]
+}

@@ -1,12 +1,15 @@
 /* 场次工作台 · 界面层（三）渲染、交互、启动 */
 'use strict';
 const MUTATING = new Set(['ack', 'ackConflict', 'lockShot', 'lockGroup', 'choose', 'confirmDir', 'clearDir', 'regClip', 'acc', 'accPass', 'prop', 'decide', 'toneSend', 'toneDel', 'dlgTime', 'fieldLock', 'thumb', 'closeCI', 'clearLastFrame', 'lintSign', 'lintUnsign', 'fitPlan', 'heard']);
-function focusKey() { const a = document.activeElement; if (!a || a === document.body) return null; if (a.id) return '#' + a.id; if (a.dataset && a.dataset.act) return `[data-act="${a.dataset.act}"]` + (a.dataset.v != null ? `[data-v="${CSS.escape(a.dataset.v)}"]` : '') + (a.dataset.id != null ? `[data-id="${CSS.escape(a.dataset.id)}"]` : '') + (a.dataset.role != null ? `[data-role="${CSS.escape(a.dataset.role)}"]` : '') + (a.dataset.k != null ? `[data-k="${a.dataset.k}"]` : '') + (a.dataset.a != null ? `[data-a="${a.dataset.a}"]` : '') + (a.dataset.g != null ? `[data-g="${a.dataset.g}"]` : '') + (a.dataset.name != null ? `[data-name="${CSS.escape(a.dataset.name)}"]` : ''); if (a.dataset && a.dataset.dt) return `[data-dt="${a.dataset.dt}"]`; return null; }
+function focusKey() { const k = focusKey0(); if (!k || k[0] === '#') return k; const a = document.activeElement; const box = a && a.closest('#drawer,#side,#tree,#main,#top,#tabs'); return box ? '#' + box.id + ' ' + k : k; }
+function focusKey0() { const a = document.activeElement; if (!a || a === document.body) return null; if (a.id) return '#' + a.id; if (a.dataset && a.dataset.act) return `[data-act="${a.dataset.act}"]` + (a.dataset.v != null ? `[data-v="${CSS.escape(a.dataset.v)}"]` : '') + (a.dataset.id != null ? `[data-id="${CSS.escape(a.dataset.id)}"]` : '') + (a.dataset.role != null ? `[data-role="${CSS.escape(a.dataset.role)}"]` : '') + (a.dataset.k != null ? `[data-k="${a.dataset.k}"]` : '') + (a.dataset.a != null ? `[data-a="${a.dataset.a}"]` : '') + (a.dataset.g != null ? `[data-g="${a.dataset.g}"]` : '') + (a.dataset.name != null ? `[data-name="${CSS.escape(a.dataset.name)}"]` : ''); if (a.dataset && a.dataset.dt) return `[data-dt="${a.dataset.dt}"]`; return null; }
 function applyInert() {
   /* 窄屏抽屉式侧栏：收起时 inert，键盘 Tab 不会进入看不见的区域 */
   const w = window.innerWidth; const t = $('#tree'), sd = $('#side');
   const tOff = t.classList.contains('hide') || (w <= 820 && !t.classList.contains('open')); const sOff = sd.classList.contains('hide') || (w <= 1100 && !sd.classList.contains('open'));
-  t.inert = tOff; sd.inert = sOff; t.setAttribute('aria-hidden', tOff); sd.setAttribute('aria-hidden', sOff);
+  t.inert = tOff; sd.inert = sOff;
+  /* 覆盖式侧栏／镜头树打开时，被盖住的主区不可聚焦（Codex 第 5 轮独立方案） */
+  const mw = $('#mainwrap'); if (mw) { const cover = (!sOff && w <= 1100 && sd.classList.contains('open')) || (!tOff && w <= 820 && t.classList.contains('open')); mw.inert = cover; } t.setAttribute('aria-hidden', tOff); sd.setAttribute('aria-hidden', sOff);
   const dr = $('#drawer'); if (dr) { dr.inert = !UI.drawer; dr.setAttribute('aria-hidden', !UI.drawer); }
   /* 抽屉是模态对话框：打开时背景整体 inert（读屏与 Tab 都进不去），关闭后恢复 */
   const app = document.querySelector('.app'); if (app) app.inert = !!UI.drawer;
@@ -14,6 +17,7 @@ function applyInert() {
 window.addEventListener('resize', () => applyInert());
 function render() {
   const fk = focusKey(); const hadDrawer = !!document.querySelector('#drawer.open');
+  const openD = {}; ['#drawer', '#main'].forEach((b) => { openD[b] = Array.from(document.querySelectorAll(b + ' details')).map((d) => d.open); });
   if (!WB.unlocked(st) && UI.tab !== 'stage0') UI.tab = 'stage0';
   if (UI.finalMode && !FINAL_TABS.includes(UI.tab)) UI.tab = '导演';
   renderTop();
@@ -24,10 +28,10 @@ function render() {
   const V = { stage0: viewStage0, 导演: viewDirector, 摄影: viewCamera, 剪辑: viewEdit, 美术: viewArt, 剧作: viewScript, prompt: viewPrompt, queue: viewQueue, backend: viewBackend }[UI.tab] || viewStage0;
   const withEdit = ['导演', '摄影', '剪辑', '美术', '剧作'].includes(UI.tab) && !UI.finalMode;
   $('#main').innerHTML = (withEdit ? editBar() : '') + V(); $('#main').setAttribute('aria-labelledby', 'tab-' + UI.tab);
-  renderDrawer(); save(); applyInert();
-  if (!UI.drawer && hadDrawer && UI.opener) { const o = UI.opener; UI.opener = null; try { const n = document.querySelector(o); if (n) { n.focus(); return; } } catch (e) { /* 忽略 */ } }
+  renderDrawer(); ['#drawer', '#main'].forEach((b) => { const was = openD[b]; const now = Array.from(document.querySelectorAll(b + ' details')); if (was && was.length === now.length && (b !== '#drawer' || (hadDrawer && UI.drawer))) now.forEach((d, i) => { if (was[i]) d.open = true; }); }); save(); applyInert();
+  if (!UI.drawer && hadDrawer && UI.opener) { const o = UI.opener; UI.opener = null; try { const n = document.querySelector(o); if (n && !n.closest('[inert]')) { n.focus(); return; } $('#main').focus(); return; } catch (e) { /* 忽略 */ } }
   if (UI.drawer && !hadDrawer) { UI.opener = fk; const c = document.querySelector('#drawer [data-act="closeDrawer"]'); if (c) c.focus(); }
-  else if (fk) { try { const n = document.querySelector(fk); if (n && !n.disabled) n.focus({ preventScroll: true }); } catch (e) { /* 选择器失效就放弃恢复 */ } }
+  else if (fk) { let n = null; try { n = document.querySelector(fk); } catch (e) { n = null; } if (n && !n.disabled && !n.closest('[inert]') && !inClosedDetails(n)) n.focus({ preventScroll: true }); else if (document.activeElement === document.body || (document.activeElement && document.activeElement.closest('[inert]'))) { const c = UI.shot && document.getElementById('card-' + UI.shot); const t = c && c.querySelector('button,[tabindex="0"]'); (t || $('#main')).focus({ preventScroll: !!t }); } }
 }
 const ctx = () => ({ shot: UI.shot, group: UI.group });
 function runEdit(text, confirm, force) {
@@ -77,6 +81,7 @@ async function addTone(files) {
   const all = Array.from(files || []); const list = all.filter((f) => /^image\/(png|jpeg|webp|gif)$/.test(f.type) && f.size <= 15 * 1024 * 1024);
   if (list.length < all.length) toast('已忽略 ' + (all.length - list.length) + ' 个文件：只收 PNG/JPEG/WebP，且 ≤15MB');
   if (!list.length) return;
+  snap();
   st.data.scene.toneRefs = st.data.scene.toneRefs || [];
   for (const f of list) { if (st.data.scene.toneRefs.length >= 2) { toast('最多 2 张参考图'); break; } try { const t = await analyzeTone(f); t.id = 'T' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); t.sha8 = WB.sha8(t.thumb); st.data.scene.toneRefs.push(t); } catch (e) { toast(e.message); } }
   WB.logEntry(st, { who: UI.who, text: '加入影调参考', scope: '场', target: 'S04', variable: '影调参考', before: '—', after: st.data.scene.toneRefs.length + ' 张', status: '已应用' }); render();
@@ -84,7 +89,7 @@ async function addTone(files) {
 function act(a, v, el) {
   if (MUTATING.has(a)) snap();
   switch (a) {
-    case 'undo': { if (!HIST.length) { toast('没有可撤销的改动'); return; } const prev = JSON.parse(HIST.pop()); const last = st.log[st.log.length - 1]; const rev0 = st.rev || 0; st = WB.init(window.S04_DATA, window.REF_INDEX, prev); st.rev = rev0 + 1; WB.logEntry(st, { who: UI.who, text: '撤销上一笔' + (last ? '：' + last.text : ''), scope: '—', target: '—', variable: '撤销', before: '—', after: '—', status: '已应用' }); UI.result = null; toast('已撤销'); break; }
+    case 'undo': { if (!HIST.length) { toast('没有可撤销的改动'); return; } const peek = JSON.parse(HIST[HIST.length - 1]); const undone = st.log.filter((e) => (e.rev || 0) > (peek.rev || 0)); const owners = Array.from(new Set(undone.map((e) => String(e.who).replace(/（.*）$/, '')))); /* 撤销按原事务查权限（Codex 独立 v0.7 P1-3）：只能撤自己的；导演可撤任何一笔 */ if (UI.who !== '导演' && owners.some((w) => w !== UI.who)) { toast(`上一笔是「${owners.join('、')}」做的：只有本人或导演可以撤销`); return; } const prev = JSON.parse(HIST.pop()); const last = st.log[st.log.length - 1]; const rev0 = st.rev || 0; st = WB.init(window.S04_DATA, window.REF_INDEX, prev); st.rev = rev0 + 1; WB.logEntry(st, { who: UI.who, text: '撤销上一笔' + (last ? '：' + last.text : ''), scope: '—', target: '—', variable: '撤销', before: '—', after: '—', status: '已应用' }); UI.result = null; toast('已撤销'); break; }
     case 'tab': UI.tab = v; UI.result = null; break;
     case 'mode': UI.mode = v; break;
     case 'final': UI.finalMode = !UI.finalMode; break;
@@ -103,7 +108,7 @@ function act(a, v, el) {
     case 'closeDrawer': UI.drawer = null; break;
     case 'overlay': UI.overlay = v; break;
     case 'ptab': UI.ptab[el.dataset.id] = v; break;
-    case 'toggleSide': case 'toggleTree': { const p = $(a === 'toggleSide' ? '#side' : '#tree'); const on = p.classList.toggle('open'); applyInert(); document.querySelectorAll(`[data-act="${a}"]`).forEach((b) => b.setAttribute('aria-expanded', on)); if (on) { const f = p.querySelector('button,[tabindex="0"],a,input'); if (f) f.focus(); } else if (el) el.focus(); return; }
+    case 'toggleSide': case 'toggleTree': { const p = $(a === 'toggleSide' ? '#side' : '#tree'); const on = p.classList.toggle('open'); applyInert(); document.querySelectorAll(`[data-act="${a}"]`).forEach((b) => b.setAttribute('aria-expanded', on)); if (on) { const f = p.querySelector('button,[tabindex="0"],a,input'); if (f) f.focus(); } else { const t = Array.from(document.querySelectorAll(`[data-act="${a}"]`)).find((b) => !p.contains(b) && b.getClientRects().length && !b.closest('[inert]')); (t || $('#main')).focus(); } return; }
     case 'lockShot': { const s = S(v); const on = s.lock !== '锁定'; if (UI.who !== '导演') { toast('只有导演可以' + (on ? '锁定' : '解锁')); return; } if (!on && !window.confirm('解锁 ' + short(v) + ' 会让这些内容失效：\n· ' + WB.invalidations(st, v).join('\n· ') + '\n\n确定解锁？')) return; const r = WB.setLock(st, v, on, UI.who); toast(r.ok ? (on ? '已锁定 ' : '已解锁 ') + short(v) : r.msg); break; }
     case 'lockGroup': { const r = WB.lockGroup(st, v, UI.who); toast(r.ok ? '已锁组' : r.msg); break; }
     case 'choose': { if (!/导演|总监/.test(UI.who)) { toast('只有导演或总监可以选方向'); return; } const r = WB.chooseDirection(st, v, UI.who, UI.who !== '导演'); toast(r.ok ? '已选方向 ' + v : r.msg); break; }
@@ -116,15 +121,15 @@ function act(a, v, el) {
       const [target, scope] = [v.slice(0, v.indexOf(':')), v.slice(v.indexOf(':') + 1)]; const on = a === 'lintSign';
       const g = WB.group(st, scope); const ctx = target === 'prompt' ? WB.lintCtx(st, 'prompt', scope, { text: WB.compose(st, scope).text }) : target === 'acting' ? WB.lintCtx(st, 'acting', scope, { g }) : target === 'stage0' ? WB.lintCtx(st, 'stage0', scope, {}) : null;
       if (!ctx) { toast('这一类规则在这里不能签核'); return; }
-      const R0 = WB.RULESET.find((r) => r.id === el.dataset.r); if (on && R0 && R0.check !== 'manual' && UI.who !== '导演') { toast('只有导演可以接受提醒项'); return; }
-      WB.signRule(st, v, el.dataset.r, UI.who, on, ctx.hash); toast(on ? '已签核 ' + el.dataset.r + '（绑定当前内容）' : '已撤销 ' + el.dataset.r); break;
+      const R0 = WB.RULESET.find((r) => r.id === el.dataset.r); if (on && R0 && String(R0.check).split(':')[0] !== 'manual' && UI.who !== '导演') { toast('只有导演可以接受提醒项'); return; }
+      { const sr = WB.signRule(st, v, el.dataset.r, UI.who, on, ctx.hash); if (!sr.ok) { toast(sr.msg); return; } } toast(on ? '已签核 ' + el.dataset.r + '（绑定当前内容）' : '已撤销 ' + el.dataset.r); break;
     }
     case 'fitPlan': { const r = WB.applyFitPlan(st, UI.who); toast(r.ok ? (r.unchanged ? '预案已执行过，没有变化' : `已加秒：全场 ${WB.sceneSec(st)}″，相关片段需复核`) : r.msg); break; }
     case 'closeCI': { const r = WB.closeCI(st, v, UI.who); toast(r.ok ? '已关闭 ' + v : r.msg); break; }
     case 'lintToggle': UI.lintOpen = UI.lintOpen || {}; UI.lintOpen[v] = !UI.lintOpen[v]; break;
     case 'copyGap': { const gap = WB.gaps(st).find((g) => g.key === v); const p = gap && WB.gapPrompt(st, gap, 'ABC'[+el.dataset.k]); if (!p || !p.ok) { toast('这一项没有出图提示词'); return; } deliver(p.prompt, `${(gap.id || gap.tmp)}_${'ABC'[+el.dataset.k]}_image_prompt.txt`, `已复制 ${'ABC'[+el.dataset.k]} 出图提示词`); return; }
     case 'seedTask': download('S04_seedance_spec_task.json', WB.seedanceTask(st)); return;
-    case 'thumb': { st.thumbSel[el.dataset.g][el.dataset.name] = el.checked; break; }
+    case 'thumb': { const r = WB.setThumb(st, el.dataset.g, el.dataset.name, el.checked, UI.who); if (!r.ok) { el.checked = !el.checked; toast(r.msg); } else if (r.invalidates.length) toast('参考图改了提示词：' + r.invalidates.join('，')); break; }
     case 'heard': { const [sid, i] = v.split('|'); const r = WB.markHeard(st, sid, +i, UI.who); toast(r.ok ? '已记录试听：这句在当前起止点内能念完' : r.msg); break; }
     case 'dlgTime': { const [sid, i] = v.split('|'); const inp = document.querySelector(`[data-dt="${v}"]`); const inp1 = document.querySelector(`[data-dt1="${v}"]`); const r = WB.setDialogueTime(st, sid, +i, inp.value === '' ? NaN : +inp.value, UI.who, inp1 ? inp1.value : null); toast(r.ok ? `台词 ${inp.value}–${inp1 ? inp1.value : ''}″` + (r.over ? '：仍念不完' : '') + (r.overlap ? '：与另一句重叠' : '') + (r.risk ? '：要试听' : '') : r.msg); break; }
     case 'fieldLock': { const [sid, k] = v.split('|'); const s = S(sid); const on = !s.fieldLocks[k]; if (UI.who !== '导演') { toast('只有导演可以锁字段'); return; } const r = WB.setLock(st, sid, on, UI.who, k); toast(r.ok ? (on ? '已锁 ' : '已解锁 ') + short(sid) + '·' + k : r.msg); break; }
@@ -160,7 +165,7 @@ document.addEventListener('change', (ev) => {
   if (el.id === 'who') { UI.who = el.value; UI.result = null; render(); return; }
   if (el.dataset.act === 'toneFile') addTone(el.files);
   if (el.dataset.act === 'skillFile') checkSkillFiles(el.files);
-  if (el.dataset.act === 'thumb') { snap(); act('thumb', null, el); render(); return; }
+  if (el.dataset.act === 'thumb') { act('thumb', null, el); render(); return; }
   if (el.dataset.act === 'lastFrame' && el.files[0]) {
     const f = el.files[0]; if (!/^image\/(png|jpeg|webp)$/.test(f.type) || f.size > 15e6) { toast('尾帧只收 PNG/JPEG/WebP，≤15MB'); return; }
     const fr = new FileReader(); fr.onload = () => { const img = new Image(); img.onload = () => { const c = document.createElement('canvas'); const k = Math.min(1, 960 / img.width); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); const d = c.toDataURL('image/jpeg', 0.85); snap(); const r = WB.setLastFrame(st, el.dataset.g, d, null, UI.who); toast(r.ok ? '已回填实际尾帧' + (r.applied ? '：下一组首帧已接管' : '（片段已批后自动接管下一组首帧）') : r.msg); save(); render(); }; img.onerror = () => toast('图片读不出来'); img.src = fr.result; }; fr.readAsDataURL(f);
@@ -181,7 +186,7 @@ document.addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape' && UI.drawer) { UI.drawer = null; render(); return; }
   /* 焦点陷阱：抽屉打开时 Tab／Shift+Tab 在抽屉内循环 */
   if (ev.key === 'Tab' && UI.drawer) { const f = drawerFocusables(); if (f.length) { const a = f[0], z = f[f.length - 1]; if (!$('#drawer').contains(ae)) { ev.preventDefault(); a.focus(); } else if (ev.shiftKey && ae === a) { ev.preventDefault(); z.focus(); } else if (!ev.shiftKey && ae === z) { ev.preventDefault(); a.focus(); } } }
-  if (ev.key === 'Escape' && ($('#side').classList.contains('open') || $('#tree').classList.contains('open'))) { const which = $('#side').classList.contains('open') ? 'Side' : 'Tree'; $('#side').classList.remove('open'); $('#tree').classList.remove('open'); applyInert(); const b = document.querySelector(`[data-act="toggle${which}"]`); if (b) b.focus(); return; }
+  if (ev.key === 'Escape' && ($('#side').classList.contains('open') || $('#tree').classList.contains('open'))) { const which = $('#side').classList.contains('open') ? 'Side' : 'Tree'; $('#side').classList.remove('open'); $('#tree').classList.remove('open'); applyInert(); document.querySelectorAll('[data-act="toggleSide"],[data-act="toggleTree"]').forEach((b) => b.setAttribute('aria-expanded', 'false')); const b = document.querySelector(`[data-act="toggle${which}"]`); if (b) b.focus(); return; }
   if (ev.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(ae.tagName)) { const i = $('#editInput'); if (i) { ev.preventDefault(); i.focus(); } }
   if ((ev.key === 'Enter' || ev.key === ' ') && ae && (ae.id === 'dropzone' || ae.id === 'skilldrop')) { ev.preventDefault(); ae.querySelector('input').click(); }
   if ((ev.key === 'Enter' || ev.key === ' ') && ae && ae.classList.contains('blk')) { ev.preventDefault(); act('selShot', ae.dataset.v, ae); }
@@ -199,7 +204,7 @@ document.addEventListener('drop', (ev) => { const z = ev.target.closest && ev.ta
 document.addEventListener('click', (ev) => { const k = ev.target.closest && ev.target.closest('#skilldrop'); if (k && ev.target.tagName !== 'INPUT') k.querySelector('input').click(); });
 window.addEventListener('storage', (ev) => {
   if (ev.key !== KEY || !ev.newValue) return;
-  try { const o = JSON.parse(ev.newValue); if (o.built === window.S04_DATA.built && (o.st.rev || 0) >= (st.rev || 0)) { st = WB.init(window.S04_DATA, window.REF_INDEX, o.st); HIST.length = 0; toast('另一个标签页更新了数据，已同步（本页撤销记录已清空，避免覆盖对方的改动）'); render(); } } catch (e) { /* 忽略坏数据 */ }
+  try { const o = JSON.parse(ev.newValue); if (o.built === window.S04_DATA.built && o.txn !== SYNC.txn) { st = WB.init(window.S04_DATA, window.REF_INDEX, o.st); SYNC.txn = o.txn || null; SYNC.last = JSON.stringify(WB.serialize(st)); HIST.length = 0; toast('另一个标签页更新了数据，已同步（本页撤销记录已清空，避免覆盖对方的改动）'); render(); } } catch (e) { /* 忽略坏数据 */ }
 });
 document.addEventListener('keydown', (ev) => { if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z' && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) { ev.preventDefault(); act('undo'); } });
 (function boot() {

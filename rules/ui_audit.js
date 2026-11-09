@@ -29,6 +29,10 @@ window.UI_AUDIT = {
    "ok": true,
    "hits": []
   },
+  "contrastFloor": {
+   "ok": true,
+   "hits": []
+  },
   "headingScale": {
    "ok": true,
    "hits": []
@@ -70,7 +74,12 @@ window.UI_AUDIT = {
    "hits": []
   }
  },
- "codeSha8": "cbacd8be",
- "time": "2026-11-10 00:08",
- "browser": "chromium 1440"
+ "codeSha8": "0697d13a",
+ "engines": [
+  "chromium",
+  "firefox",
+  "webkit"
+ ],
+ "time": "2026-11-10 02:00",
+ "browser": "chromium 1440＋768（chromium、firefox、webkit 都跑了 TA 子集）"
 };
