@@ -1,0 +1,77 @@
+[
+ {
+  "id": "SS-01",
+  "skill": "story-to-screen",
+  "rule": "诊断条目区分事实/推断/候选/已批准（带来源）",
+  "quote": "1. 默认中文，称用户为导演。先实际读取当前资料、批准基线和用户最新要求，区分事实、推断、候选和已批准；没有读完就写明覆盖范围。已明确的授权不再询问。",
+  "src": {
+   "file": "/home/box/agent-data/workflows/story-to-screen/SKILL.md",
+   "line": 15,
+   "key": "SS"
+  },
+  "sha8": "c2adf6dc",
+  "check": "auto:s0Sourced",
+  "severity": "error",
+  "target": "stage0"
+ },
+ {
+  "id": "SS-02",
+  "skill": "story-to-screen",
+  "rule": "资产清单 ≠ 素材存在：只有已批的真实文件算「有」",
+  "quote": "6. 资产清单不等于素材存在。引用图片、音频、视频先检查真实文件和适用版本；已批准设计与已批准图片分开记录。引用标签只来自实际上传映射。",
+  "src": {
+   "file": "/home/box/agent-data/workflows/story-to-screen/SKILL.md",
+   "line": 20,
+   "key": "SS"
+  },
+  "sha8": "c2adf6dc",
+  "check": "auto:s0AssetTruth",
+  "severity": "error",
+  "target": "stage0"
+ },
+ {
+  "id": "SS-03",
+  "skill": "story-to-screen",
+  "rule": "提示词正文归 CINEDANCE/LIRA 模块；工作台只按规则组装草稿并标注",
+  "quote": "2. 剧本、导演设计、分镜、声音设计、资产规格、诊断意见和文件整理由总控直接完成。**总控不撰写、改写或粘贴图像/视频模型提示词正文**，不把提示词换名为“执行段落”绕过边界。需要该产物时按14调度专业模块，主交付只保留模块产物的路径、版本、审查结论和索引。",
+  "src": {
+   "file": "/home/box/agent-data/workflows/story-to-screen/SKILL.md",
+   "line": 16,
+   "key": "SS"
+  },
+  "sha8": "c2adf6dc",
+  "check": "manual",
+  "severity": "info",
+  "target": "stage0"
+ },
+ {
+  "id": "SS-04",
+  "skill": "story-to-screen",
+  "rule": "场次卡：进场状态、即时目标、策略、阻力、触发事件、出场状态",
+  "quote": "**适用**：分场、文学剧本优化。**输入**：该场前后至少一场，已批准人物知识与事件状态。**操作**：记录进场状态、人物即时目标、采取的策略、阻力、触发改变的事件、出场状态。区分事实变化、关系变化、情绪变化、观众信息变化；安静场可以以认知或关系变化成立，不要求每场争吵反转。问“删去本场，后面哪些理解或行动失去依据？",
+  "src": {
+   "file": "/home/box/agent-data/workflows/story-to-screen/references/02_story.md",
+   "line": 11,
+   "key": "SS02"
+  },
+  "sha8": "8c855a77",
+  "check": "auto:s0SceneCard",
+  "severity": "warn",
+  "target": "stage0"
+ },
+ {
+  "id": "SS-05",
+  "skill": "story-to-screen",
+  "rule": "删场测试：删去本场后哪些后场失去依据",
+  "quote": "**适用**：分场、文学剧本优化。**输入**：该场前后至少一场，已批准人物知识与事件状态。**操作**：记录进场状态、人物即时目标、采取的策略、阻力、触发改变的事件、出场状态。区分事实变化、关系变化、情绪变化、观众信息变化；安静场可以以认知或关系变化成立，不要求每场争吵反转。问“删去本场，后面哪些理解或行动失去依据？",
+  "src": {
+   "file": "/home/box/agent-data/workflows/story-to-screen/references/02_story.md",
+   "line": 11,
+   "key": "SS02"
+  },
+  "sha8": "8c855a77",
+  "check": "auto:s0CutTest",
+  "severity": "warn",
+  "target": "stage0"
+ }
+]

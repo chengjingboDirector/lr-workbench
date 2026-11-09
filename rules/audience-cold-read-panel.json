@@ -1,0 +1,62 @@
+[
+ {
+  "id": "CR-01",
+  "skill": "audience-cold-read-panel",
+  "rule": "观众维度标明「模拟，非真实观众」",
+  "quote": "『模拟冷读·〔接触程度〕：本报告由 AI 按设定画像模拟阅读生成，非真实外部观众、平台数据或投资方反馈。』",
+  "src": {
+   "file": "/home/box/shared-skills/audience-cold-read-panel/SKILL.md",
+   "line": 19,
+   "key": "CR"
+  },
+  "sha8": "c7830604",
+  "check": "auto:s0SimLabel",
+  "severity": "error",
+  "target": "stage0"
+ },
+ {
+  "id": "CR-02",
+  "skill": "audience-cold-read-panel",
+  "rule": "至少两位画像（一同情一挑剔）",
+  "quote": "3. 至少两位画像，一同情一挑剔吗？",
+  "src": {
+   "file": "/home/box/shared-skills/audience-cold-read-panel/SKILL.md",
+   "line": 223,
+   "key": "CR"
+  },
+  "sha8": "c7830604",
+  "check": "manual",
+  "severity": "info",
+  "target": "stage0"
+ },
+ {
+  "id": "CR-03",
+  "skill": "audience-cold-read-panel",
+  "rule": "每条问题都有位置（行号）",
+  "quote": "每条问题必须有位置和原文引文；缺任一项的意见删除。",
+  "src": {
+   "file": "/home/box/shared-skills/audience-cold-read-panel/SKILL.md",
+   "line": 178,
+   "key": "CR"
+  },
+  "sha8": "c7830604",
+  "check": "auto:s0HasLines",
+  "severity": "error",
+  "target": "stage0"
+ },
+ {
+  "id": "CR-04",
+  "skill": "audience-cold-read-panel",
+  "rule": "写出放下点（或如实写无）",
+  "quote": "- **放下点** 是整份报告最有信息量的数据：写清在哪一句、为什么。模拟读者「放下」后，标记位置，继续读完以便给出全稿记录，但后续段落注明「已越过放下点」。",
+  "src": {
+   "file": "/home/box/shared-skills/audience-cold-read-panel/SKILL.md",
+   "line": 109,
+   "key": "CR"
+  },
+  "sha8": "c7830604",
+  "check": "manual",
+  "severity": "info",
+  "target": "stage0"
+ }
+]

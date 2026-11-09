@@ -1,0 +1,115 @@
+// 自动生成；源 = assets/REF/ref_index.json
+window.REF_INDEX = {
+ "note": "项目内未找到既有 ref_index.json；本文件为工作台首建。资产注册表 v0.5 全部条目为候选/待批、项目内无任何已批 REF 图，因此 已批=0。",
+ "built": "2026-11-09 22:11",
+ "entries": [
+  {
+   "key": "S04-C001_in",
+   "kind": "分镜草图",
+   "file": "assets/sketch/S04-C001_in.png",
+   "status": "候选",
+   "sha8": "b2fa73a8",
+   "source": "图像模型（草图）",
+   "picker": null,
+   "time": "2026-11-09 22:11"
+  },
+  {
+   "key": "S04-C001_out",
+   "kind": "分镜草图",
+   "file": "assets/sketch/S04-C001_out.png",
+   "status": "候选",
+   "sha8": "80e19418",
+   "source": "图像模型（草图）",
+   "picker": null,
+   "time": "2026-11-09 22:11"
+  },
+  {
+   "key": "S04-C002_in",
+   "kind": "分镜草图",
+   "file": "assets/sketch/S04-C002_in.png",
+   "status": "候选",
+   "sha8": "f89af29c",
+   "source": "图像模型（草图）",
+   "picker": null,
+   "time": "2026-11-09 22:11"
+  },
+  {
+   "key": "S04-C002_out",
+   "kind": "分镜草图",
+   "file": "assets/sketch/S04-C002_out.png",
+   "status": "候选",
+   "sha8": "1fe13ce5",
+   "source": "图像模型（草图）",
+   "picker": null,
+   "time": "2026-11-09 22:11"
+  },
+  {
+   "key": "S04-C003_in",
+   "kind": "分镜草图",
+   "file": "assets/sketch/S04-C003_in.png",
+   "status": "候选",
+   "sha8": "5ff4d4ff",
+   "source": "图像模型（草图）",
+   "picker": null,
+   "time": "2026-11-09 22:11"
+  },
+  {
+   "key": "S04-C003_out",
+   "kind": "分镜草图",
+   "file": "assets/sketch/S04-C003_out.png",
+   "status": "候选",
+   "sha8": "e48ff7f9",
+   "source": "图像模型（草图）",
+   "picker": null,
+   "time": "2026-11-09 22:11"
+  },
+  {
+   "key": "SC-03-MAP-S04-G1",
+   "kind": "鸟瞰走位图",
+   "file": "assets/map/SC-03-MAP-S04-G1_annot.png",
+   "status": "候选",
+   "sha8": "06d7ac2a",
+   "source": "图像模型底图＋数据叠加",
+   "picker": null,
+   "time": "2026-11-09 22:11"
+  },
+  {
+   "key": "SC-03-MAP-S04-G1_notext",
+   "kind": "鸟瞰走位图",
+   "file": "assets/map/SC-03-MAP-S04-G1_notext.png",
+   "status": "候选",
+   "sha8": "c31bd9ef",
+   "source": "图像模型底图＋数据叠加",
+   "picker": null,
+   "time": "2026-11-09 22:11"
+  },
+  {
+   "key": "TMP-VE-CMDCRAFT@降落/舱门@外观#cA",
+   "id": null,
+   "gapName": "凯恩载人飞行器",
+   "state": "降落/舱门",
+   "view": "外观",
+   "kind": "缺资产候选",
+   "file": "assets/REF/_待补码_凯恩载人飞行器/TMP-VE-CMDCRAFT_降落-舱门_外观_v01_cA.png",
+   "status": "候选",
+   "sha8": "fe3f0748",
+   "source": "图像模型（概念草图）",
+   "picker": null,
+   "time": "2026-11-09 22:11"
+  },
+  {
+   "key": "TMP-VE-CMDCRAFT@降落/舱门@外观#cB",
+   "id": null,
+   "gapName": "凯恩载人飞行器",
+   "state": "降落/舱门",
+   "view": "外观",
+   "kind": "缺资产候选",
+   "file": "assets/REF/_待补码_凯恩载人飞行器/TMP-VE-CMDCRAFT_降落-舱门_外观_v01_cB.png",
+   "status": "候选",
+   "sha8": "5fe734f4",
+   "source": "图像模型（概念草图）",
+   "picker": null,
+   "time": "2026-11-09 22:11"
+  }
+ ]
+};

@@ -1,0 +1,182 @@
+[
+ {
+  "id": "AC-11",
+  "skill": "acting",
+  "rule": "表演设计覆盖本组所有出镜人物（不多不少）",
+  "quote": "1. **Present characters only.** Write an acting paragraph only for",
+  "src": {
+   "file": "/home/box/agent-data/workflows/acting/references/original.md",
+   "line": 241,
+   "key": "AC"
+  },
+  "sha8": "8841c5d1",
+  "check": "auto:actCoverage",
+  "severity": "warn",
+  "target": "acting"
+ },
+ {
+  "id": "AC-12",
+  "skill": "acting",
+  "rule": "讲话人绑定已批声线主档（本项目尚无声线主档 → 待人工）",
+  "quote": "2. **Keep the constant core.** Identity, vocal profile, signature tics, eye",
+  "src": {
+   "file": "/home/box/agent-data/workflows/acting/references/original.md",
+   "line": 243,
+   "key": "AC"
+  },
+  "sha8": "8841c5d1",
+  "check": "manual",
+  "severity": "warn",
+  "target": "acting"
+ },
+ {
+  "id": "AC-01",
+  "skill": "acting",
+  "rule": "目标：对具体对象的动作动词（不是状态）",
+  "quote": "**2.1 Objective.** What the character wants IN THIS SCENE, RIGHT NOW, FROM A",
+  "src": {
+   "file": "/home/box/agent-data/workflows/acting/references/original.md",
+   "line": 41,
+   "key": "AC"
+  },
+  "sha8": "8841c5d1",
+  "check": "auto:actObjective",
+  "severity": "warn",
+  "target": "acting"
+ },
+ {
+  "id": "AC-02",
+  "skill": "acting",
+  "rule": "阻碍与代价：写清「得不到会怎样」",
+  "quote": "**2.2 Obstacle & stakes.** What prevents them from getting it — external",
+  "src": {
+   "file": "/home/box/agent-data/workflows/acting/references/original.md",
+   "line": 48,
+   "key": "AC"
+  },
+  "sha8": "8841c5d1",
+  "check": "auto:actObstacle",
+  "severity": "warn",
+  "target": "acting"
+ },
+ {
+  "id": "AC-03",
+  "skill": "acting",
+  "rule": "策略：动作动词；失败要换策略（≥2 种，避免单一策略）",
+  "quote": "**2.3 Tactics.** The concrete method of pursuing the objective right now.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/acting/references/original.md",
+   "line": 55,
+   "key": "AC"
+  },
+  "sha8": "8841c5d1",
+  "check": "auto:actTactics",
+  "severity": "warn",
+  "target": "acting"
+ },
+ {
+  "id": "AC-04",
+  "skill": "acting",
+  "rule": "节拍：2–4 次可见变化（停顿／姿态／语速／视线）",
+  "quote": "**2.4 Beats.** The beat is the smallest unit of action: the stretch during",
+  "src": {
+   "file": "/home/box/agent-data/workflows/acting/references/original.md",
+   "line": 60,
+   "key": "AC"
+  },
+  "sha8": "8841c5d1",
+  "check": "auto:actBeats",
+  "severity": "warn",
+  "target": "acting"
+ },
+ {
+  "id": "AC-05",
+  "skill": "acting",
+  "rule": "潜台词：说话的人物写出没说出口的意图",
+  "quote": "**2.5 Subtext.** What the character actually thinks and wants, as opposed to",
+  "src": {
+   "file": "/home/box/agent-data/workflows/acting/references/original.md",
+   "line": 68,
+   "key": "AC"
+  },
+  "sha8": "8841c5d1",
+  "check": "auto:actSubtext",
+  "severity": "warn",
+  "target": "acting"
+ },
+ {
+  "id": "AC-06",
+  "skill": "acting",
+  "rule": "倾听：对方说话时的反应在句中就开始",
+  "quote": "1. **Reaction starts before the partner's line ends.** A person grasps the",
+  "src": {
+   "file": "/home/box/agent-data/workflows/acting/references/original.md",
+   "line": 81,
+   "key": "AC"
+  },
+  "sha8": "8841c5d1",
+  "check": "auto:actListening",
+  "severity": "warn",
+  "target": "acting"
+ },
+ {
+  "id": "AC-07",
+  "skill": "acting",
+  "rule": "眼部生命：每个出镜人物写视线／眨眼／扫视",
+  "quote": "## 7. Eye life — mandatory in every profile and every scene",
+  "src": {
+   "file": "/home/box/agent-data/workflows/acting/references/original.md",
+   "line": 215,
+   "key": "AC"
+  },
+  "sha8": "8841c5d1",
+  "check": "auto:actEyes",
+  "severity": "warn",
+  "target": "acting"
+ },
+ {
+  "id": "AC-08",
+  "skill": "acting",
+  "rule": "表演段不写服装、机位、颜色",
+  "quote": "- [ ] States not transitions; no wardrobe, camera or color inside the acting",
+  "src": {
+   "file": "/home/box/agent-data/workflows/acting/references/original.md",
+   "line": 362,
+   "key": "AC"
+  },
+  "sha8": "8841c5d1",
+  "check": "auto:actNoCamera",
+  "severity": "warn",
+  "target": "acting"
+ },
+ {
+  "id": "AC-09",
+  "skill": "acting",
+  "rule": "表演新增内容标「设计建议」，不当原稿事实",
+  "quote": "- 用角色想对谁达成什么、受到什么阻碍、如何换策略组织可观察行为；保留批准人物设定、台词和场次事件。新增身世、伤病、动作习惯或声线标为设计建议，不作为原稿事实。",
+  "src": {
+   "file": "/home/box/agent-data/workflows/acting/SKILL.md",
+   "line": 17,
+   "key": "ACS"
+  },
+  "sha8": "068b7298",
+  "check": "auto:actLabelled",
+  "severity": "error",
+  "target": "acting"
+ },
+ {
+  "id": "AC-10",
+  "skill": "acting",
+  "rule": "越近的镜动作越少：特写只留眼睛与念头",
+  "quote": "| 14 | Close-up overload | Active mimicry on a close-up | The tighter the shot, the less movement: only the eyes and the thought |",
+  "src": {
+   "file": "/home/box/agent-data/workflows/acting/references/original.md",
+   "line": 336,
+   "key": "AC"
+  },
+  "sha8": "8841c5d1",
+  "check": "manual",
+  "severity": "info",
+  "target": "acting"
+ }
+]

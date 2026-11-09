@@ -1,0 +1,62 @@
+[
+ {
+  "id": "PJ-01",
+  "skill": "project",
+  "rule": "组内每句批准台词恰好出现一次、逐字、顺序不变（不是「包含即可」）",
+  "quote": "1. 绝不发明台词：英文台词逐字取自文学本，组内每句批准台词恰好出现一次、顺序不变。",
+  "src": {
+   "file": "/workspace/story-to-screen/projects/LR-1101-01/workbench/rules/project_contract.md",
+   "line": 5,
+   "key": "PJ"
+  },
+  "sha8": "e87c67ab",
+  "check": "auto:dialogueVerbatim",
+  "severity": "error",
+  "target": "prompt"
+ },
+ {
+  "id": "PJ-02",
+  "skill": "project",
+  "rule": "视频提示词非对白正文不出现人名／地名（台词引号内逐字保留）",
+  "quote": "2. 提示词不出现人名、品牌名、片名：非对白正文用角色描述（父亲／仿生孩子／指挥官／组长），台词引号内逐字保留。",
+  "src": {
+   "file": "/workspace/story-to-screen/projects/LR-1101-01/workbench/rules/project_contract.md",
+   "line": 6,
+   "key": "PJ"
+  },
+  "sha8": "e87c67ab",
+  "check": "auto:noNames",
+  "severity": "error",
+  "target": "prompt"
+ },
+ {
+  "id": "PJ-03",
+  "skill": "project",
+  "rule": "出图提示词不出现人名／品牌名／片名",
+  "quote": "3. 缺资产出图提示词同样不出现人名、品牌名、片名。",
+  "src": {
+   "file": "/workspace/story-to-screen/projects/LR-1101-01/workbench/rules/project_contract.md",
+   "line": 7,
+   "key": "PJ"
+  },
+  "sha8": "e87c67ab",
+  "check": "auto:noNames",
+  "severity": "error",
+  "target": "gapPrompt"
+ },
+ {
+  "id": "PJ-04",
+  "skill": "project",
+  "rule": "台词念不完的组不能标正式就绪",
+  "quote": "5. 每组 ≤30 秒；台词念不完的组不能标正式就绪。",
+  "src": {
+   "file": "/workspace/story-to-screen/projects/LR-1101-01/workbench/rules/project_contract.md",
+   "line": 9,
+   "key": "PJ"
+  },
+  "sha8": "e87c67ab",
+  "check": "auto:timingFits",
+  "severity": "error",
+  "target": "prompt"
+ }
+]

@@ -1,0 +1,152 @@
+[
+ {
+  "id": "TA-01",
+  "skill": "design-taste-frontend",
+  "rule": "交互控件最小高度 44px（正文行内链接除外）；邻钮间距≥8px",
+  "quote": "bar [collide]; every link and control outside running text 44px tall [tap-size] (a FAIL when",
+  "src": {
+   "file": "/home/box/agent-data/workflows/design-taste-frontend/SKILL.md",
+   "line": 358,
+   "key": "TAS"
+  },
+  "sha8": "23403f5f",
+  "check": "e2e:tapSize",
+  "severity": "error",
+  "target": "ui"
+ },
+ {
+  "id": "TA-02",
+  "skill": "design-taste-frontend",
+  "rule": "正文对比度目标 7:1；说明／标签／弱化字 ≥4.5:1（大字 4.5／3）。与 IM-01 的 4.5:1 地板并存：未达 7:1 记 warn",
+  "quote": "//   ink        text-contrast (text on a plain ground: body text 7:1, captions, labels and muted lines 4.5:1, large",
+  "src": {
+   "file": "/home/box/agent-data/workflows/design-taste-frontend/scripts/consistency.mjs",
+   "line": 67,
+   "key": "TAC"
+  },
+  "sha8": "080b835e",
+  "check": "e2e:textContrast",
+  "severity": "warn",
+  "target": "ui"
+ },
+ {
+  "id": "TA-03",
+  "skill": "design-taste-frontend",
+  "rule": "标题层级 h1>h2>h3，同级字号一致；标题不小于其下正文",
+  "quote": "//              contrast, busy-ground (text over a busy part of a picture), heading-scale (h1 > h2 > h3, one size each,",
+  "src": {
+   "file": "/home/box/agent-data/workflows/design-taste-frontend/scripts/consistency.mjs",
+   "line": 37,
+   "key": "TAC"
+  },
+  "sha8": "080b835e",
+  "check": "e2e:headingScale",
+  "severity": "warn",
+  "target": "ui"
+ },
+ {
+  "id": "TA-04",
+  "skill": "design-taste-frontend",
+  "rule": "窄屏下区块／按钮／固定栏不得互相叠字或叠控件",
+  "quote": "//   phone      collide (FAIL: two lines of words laid over each other, the words of one section on a picture, button or",
+  "src": {
+   "file": "/home/box/agent-data/workflows/design-taste-frontend/scripts/consistency.mjs",
+   "line": 255,
+   "key": "TAC"
+  },
+  "sha8": "080b835e",
+  "check": "e2e:collide",
+  "severity": "error",
+  "target": "ui"
+ },
+ {
+  "id": "TA-05",
+  "skill": "design-taste-frontend",
+  "rule": "内容区左右边距对等（工具台可豁免三栏壳，但主栏内部仍应对齐）",
+  "quote": "4. **Equal left and right content edges.**",
+  "src": {
+   "file": "/home/box/agent-data/workflows/design-taste-frontend/SKILL.md",
+   "line": 41,
+   "key": "TAS"
+  },
+  "sha8": "23403f5f",
+  "check": "e2e:edges",
+  "severity": "warn",
+  "target": "ui"
+ },
+ {
+  "id": "TA-06",
+  "skill": "design-taste-frontend",
+  "rule": "可访问性基础：图片 alt、字段标签、标题顺序、焦点环／可见焦点；建议提供跳到主内容的 skip-link",
+  "quote": "[a11y-name, img-alt, field-label, heading-order, tabindex, skip-link, focus-ring, focus-visible,",
+  "src": {
+   "file": "/home/box/agent-data/workflows/design-taste-frontend/SKILL.md",
+   "line": 341,
+   "key": "TAS"
+  },
+  "sha8": "23403f5f",
+  "check": "e2e:a11yBasics",
+  "severity": "warn",
+  "target": "ui"
+ },
+ {
+  "id": "TA-07",
+  "skill": "design-taste-frontend",
+  "rule": "表单可提交；成功确认只在真实发送之后出现；错误贴近字段",
+  "quote": "link lands, forms send, a confirmation only after a real send, each error under its own field",
+  "src": {
+   "file": "/home/box/agent-data/workflows/design-taste-frontend/SKILL.md",
+   "line": 351,
+   "key": "TAS"
+  },
+  "sha8": "23403f5f",
+  "check": "e2e:forms",
+  "severity": "warn",
+  "target": "ui"
+ },
+ {
+  "id": "TA-08",
+  "skill": "design-taste-frontend",
+  "rule": "悬停：禁止倾斜；抬升≤6px、缩放≤1.03；链接卡须有可见悬停反馈",
+  "quote": "//   chrome     hover-move (a hovered card or link card that tilts FAIL; one that lifts more than 6px or grows past 1.03,",
+  "src": {
+   "file": "/home/box/agent-data/workflows/design-taste-frontend/scripts/consistency.mjs",
+   "line": 182,
+   "key": "TAC"
+  },
+  "sha8": "080b835e",
+  "check": "e2e:hoverMove",
+  "severity": "warn",
+  "target": "ui"
+ },
+ {
+  "id": "TA-09",
+  "skill": "design-taste-frontend",
+  "rule": "页面自有配色不用紫罗兰／淡紫装饰（第三方真 logo 除外）",
+  "quote": "- Violet or lavender in the page's own design: accent, ground, gradient, effect colour or tint (a",
+  "src": {
+   "file": "/home/box/agent-data/workflows/design-taste-frontend/SKILL.md",
+   "line": 374,
+   "key": "TAS"
+  },
+  "sha8": "23403f5f",
+  "check": "e2e:noViolet",
+  "severity": "warn",
+  "target": "ui"
+ },
+ {
+  "id": "TA-10",
+  "skill": "design-taste-frontend",
+  "rule": "界面可见文案避免 AI 套话／库存短语／残留占位（.example、to be added 等）",
+  "quote": "tic, a voice of its own (copy-lint's ids: copy-residue, copy-slop-word, copy-stock-phrase,",
+  "src": {
+   "file": "/home/box/agent-data/workflows/design-taste-frontend/SKILL.md",
+   "line": 353,
+   "key": "TAS"
+  },
+  "sha8": "23403f5f",
+  "check": "manual",
+  "severity": "info",
+  "target": "ui"
+ }
+]

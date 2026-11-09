@@ -1,0 +1,1 @@
+taste.json 是 design-taste-frontend.json 的同内容别名（任务要求文件名）；权威生成仍走 extract_rules.py → design-taste-frontend.json。

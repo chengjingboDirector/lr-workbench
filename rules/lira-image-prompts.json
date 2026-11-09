@@ -1,0 +1,152 @@
+[
+ {
+  "id": "LI-01",
+  "skill": "lira-image-prompts",
+  "rule": "自然句子，不堆关键词；生成提示词不用全大写分节",
+  "quote": "## 1. Natural prose, not keyword stacking",
+  "src": {
+   "file": "/home/box/agent-data/workflows/lira-image-prompts/references/original.md",
+   "line": 159,
+   "key": "LI"
+  },
+  "sha8": "f480d1ad",
+  "check": "auto:liProse",
+  "severity": "warn",
+  "target": "gapPrompt"
+ },
+ {
+  "id": "LI-02",
+  "skill": "lira-image-prompts",
+  "rule": "80–150 词，不臃肿",
+  "quote": "Precision beats verbosity. A tight 80–150-word prompt beats a scattered",
+  "src": {
+   "file": "/home/box/agent-data/workflows/lira-image-prompts/references/original.md",
+   "line": 166,
+   "key": "LI"
+  },
+  "sha8": "f480d1ad",
+  "check": "auto:liLength",
+  "severity": "warn",
+  "target": "gapPrompt"
+ },
+ {
+  "id": "LI-03",
+  "skill": "lira-image-prompts",
+  "rule": "只写想要的（正向），不写 no / not / without",
+  "quote": "- In GENERATION prompts, never describe what you DON'T want — describe what",
+  "src": {
+   "file": "/home/box/agent-data/workflows/lira-image-prompts/references/original.md",
+   "line": 172,
+   "key": "LI"
+  },
+  "sha8": "f480d1ad",
+  "check": "auto:liPositive",
+  "severity": "warn",
+  "target": "gapPrompt"
+ },
+ {
+  "id": "LI-04",
+  "skill": "lira-image-prompts",
+  "rule": "画幅与分辨率是平台参数，不进正文",
+  "quote": "## 4. Aspect ratio & resolution = platform parameters",
+  "src": {
+   "file": "/home/box/agent-data/workflows/lira-image-prompts/references/original.md",
+   "line": 180,
+   "key": "LI"
+  },
+  "sha8": "f480d1ad",
+  "check": "auto:liNoAR",
+  "severity": "error",
+  "target": "gapPrompt"
+ },
+ {
+  "id": "LI-05",
+  "skill": "lira-image-prompts",
+  "rule": "写技术光（主光方向、光比）与具体材质",
+  "quote": "## 5. Technical lighting & materials, not vague mood",
+  "src": {
+   "file": "/home/box/agent-data/workflows/lira-image-prompts/references/original.md",
+   "line": 185,
+   "key": "LI"
+  },
+  "sha8": "f480d1ad",
+  "check": "auto:liLightMat",
+  "severity": "warn",
+  "target": "gapPrompt"
+ },
+ {
+  "id": "LI-06",
+  "skill": "lira-image-prompts",
+  "rule": "60/30/10 色板，取自场景语境",
+  "quote": "Percentages read well on all models: \"palette of 60% warm ochre, 30% deep",
+  "src": {
+   "file": "/home/box/agent-data/workflows/lira-image-prompts/references/original.md",
+   "line": 192,
+   "key": "LI"
+  },
+  "sha8": "f480d1ad",
+  "check": "auto:liPalette",
+  "severity": "warn",
+  "target": "gapPrompt"
+ },
+ {
+  "id": "LI-07",
+  "skill": "lira-image-prompts",
+  "rule": "不写品牌、IP、真人姓名",
+  "quote": "- No IP/brand names anywhere in the prompt.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/lira-image-prompts/references/original.md",
+   "line": 215,
+   "key": "LI"
+  },
+  "sha8": "f480d1ad",
+  "check": "auto:liNoBrand",
+  "severity": "error",
+  "target": "gapPrompt"
+ },
+ {
+  "id": "LI-08",
+  "skill": "lira-image-prompts",
+  "rule": "场景图不写光学/景深",
+  "quote": "- Optics/DOF language stays OFF locations — it belongs to characters.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/lira-image-prompts/references/original.md",
+   "line": 565,
+   "key": "LI"
+  },
+  "sha8": "f480d1ad",
+  "check": "auto:liNoOpticsOnLocation",
+  "severity": "warn",
+  "target": "gapPrompt"
+ },
+ {
+  "id": "LI-09",
+  "skill": "lira-image-prompts",
+  "rule": "不同状态分开出图（一张图一个状态）",
+  "quote": "- Multiple states (clean / damaged / bloodied) = separate assets.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/lira-image-prompts/references/original.md",
+   "line": 584,
+   "key": "LI"
+  },
+  "sha8": "f480d1ad",
+  "check": "auto:liOneState",
+  "severity": "warn",
+  "target": "gapPrompt"
+ },
+ {
+  "id": "LI-10",
+  "skill": "lira-image-prompts",
+  "rule": "提示词 ≠ 已生成资产：候选图须看图验收、落地后才算",
+  "quote": "按需要交付角色、场景、道具或编辑提示词，区分实际平台设置与正文。局部编辑明确变化项和保持项。提示词不是已生成资产；本技能没有图像生成接口，不授予上传、肖像使用或付费权限。不得借原文的措辞建议绕过平台安全审核。",
+  "src": {
+   "file": "/home/box/agent-data/workflows/lira-image-prompts/SKILL.md",
+   "line": 24,
+   "key": "LIS"
+  },
+  "sha8": "c546b80c",
+  "check": "auto:liNotAsset",
+  "severity": "info",
+  "target": "gapPrompt"
+ }
+]

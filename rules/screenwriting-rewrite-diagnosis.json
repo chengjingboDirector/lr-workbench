@@ -1,0 +1,77 @@
+[
+ {
+  "id": "RD-01",
+  "skill": "screenwriting-rewrite-diagnosis",
+  "rule": "分诊表字段：问题ID、来源、位置、级别（每条都要有）",
+  "quote": "| 问题 ID | 来源视角 | 位置 | 引文是否核实 | 级别 | 诊断层级 | 处理 | 权限 |",
+  "src": {
+   "file": "/home/box/shared-skills/screenwriting-rewrite-diagnosis/SKILL.md",
+   "line": 20,
+   "key": "RD"
+  },
+  "sha8": "8bfe3687",
+  "check": "auto:s0Triage",
+  "severity": "error",
+  "target": "stage0"
+ },
+ {
+  "id": "RD-02",
+  "skill": "screenwriting-rewrite-diagnosis",
+  "rule": "病根分层：前提／结构／人物／场景／对白／格式",
+  "quote": "症状与病根常常不在同一层。按下面顺序往上追，找到最高的那一层再改：",
+  "src": {
+   "file": "/home/box/shared-skills/screenwriting-rewrite-diagnosis/SKILL.md",
+   "line": 36,
+   "key": "RD"
+  },
+  "sha8": "8bfe3687",
+  "check": "auto:s0Layers",
+  "severity": "warn",
+  "target": "stage0"
+ },
+ {
+  "id": "RD-03",
+  "skill": "screenwriting-rewrite-diagnosis",
+  "rule": "AI 冷读的「一致」只算一个信号，须回原文核实",
+  "quote": "模拟读者（AI 冷读）提出的意见，即使多个读者「一致」，也只算一个信号，必须先回原文核实再处理。",
+  "src": {
+   "file": "/home/box/shared-skills/screenwriting-rewrite-diagnosis/SKILL.md",
+   "line": 30,
+   "key": "RD"
+  },
+  "sha8": "8bfe3687",
+  "check": "manual",
+  "severity": "info",
+  "target": "stage0"
+ },
+ {
+  "id": "RD-04",
+  "skill": "screenwriting-rewrite-diagnosis",
+  "rule": "保护行（必须保留）字面不动，并列出",
+  "quote": "2. **不要误伤保护行**：合并清单中列为「必须保留」的台词、画面、段落，字面不动。",
+  "src": {
+   "file": "/home/box/shared-skills/screenwriting-rewrite-diagnosis/SKILL.md",
+   "line": 73,
+   "key": "RD"
+  },
+  "sha8": "8bfe3687",
+  "check": "auto:s0MustKeep",
+  "severity": "error",
+  "target": "stage0"
+ },
+ {
+  "id": "RD-05",
+  "skill": "screenwriting-rewrite-diagnosis",
+  "rule": "不发明新事实；新事实单独标出等批准",
+  "quote": "1. **不要发明新事实**：新人物、新设定、新品牌功能、新数字。确实需要，在改动记录里标「新事实」并说明理由，等批准。",
+  "src": {
+   "file": "/home/box/shared-skills/screenwriting-rewrite-diagnosis/SKILL.md",
+   "line": 72,
+   "key": "RD"
+  },
+  "sha8": "8bfe3687",
+  "check": "manual",
+  "severity": "info",
+  "target": "stage0"
+ }
+]

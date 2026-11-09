@@ -1,0 +1,137 @@
+[
+ {
+  "id": "IM-01",
+  "skill": "impeccable",
+  "rule": "正文对比度 ≥4.5:1，大字 ≥3:1",
+  "quote": "- **Contrast:** body and placeholder text ≥4.5:1, large text ≥3:1. On colored surfaces tint secondary text from that hue or the foreground; never gray.",
+  "src": {
+   "file": "/home/box/.cursor/skills/impeccable/reference/craft-floor.md",
+   "line": 9,
+   "key": "IMF"
+  },
+  "sha8": "ba01bbab",
+  "check": "e2e:contrast",
+  "severity": "error",
+  "target": "ui"
+ },
+ {
+  "id": "IM-02",
+  "skill": "impeccable",
+  "rule": "不用零偏移彩色光晕阴影",
+  "quote": "- **Depth:** shadows carry an offset and a soft blur. A zero-offset colored halo is decoration.",
+  "src": {
+   "file": "/home/box/.cursor/skills/impeccable/reference/craft-floor.md",
+   "line": 10,
+   "key": "IMF"
+  },
+  "sha8": "ba01bbab",
+  "check": "e2e:glow",
+  "severity": "warn",
+  "target": "ui"
+ },
+ {
+  "id": "IM-03",
+  "skill": "impeccable",
+  "rule": "（来源冲突裁决：IMS 允许 brief 例外，IMF 明确不可豁免 → 从 IMF）标题上方不放 eyebrow／kicker 小标签",
+  "quote": "- A kicker or eyebrow above a heading. This one is a ban, not a default: no brief earns it back. The heading carries its own weight; delete the label and let th",
+  "src": {
+   "file": "/home/box/.cursor/skills/impeccable/reference/craft-floor.md",
+   "line": 27,
+   "key": "IMF"
+  },
+  "sha8": "ba01bbab",
+  "check": "e2e:eyebrow",
+  "severity": "error",
+  "target": "ui"
+ },
+ {
+  "id": "IM-04",
+  "skill": "impeccable",
+  "rule": "不用 emoji／Unicode 字符当图标",
+  "quote": "- Unicode glyphs or emoji standing in for an icon system. Icons are drawn, from a real library or authored SVG, in one consistent stroke and weight.",
+  "src": {
+   "file": "/home/box/.cursor/skills/impeccable/reference/craft-floor.md",
+   "line": 40,
+   "key": "IMF"
+  },
+  "sha8": "ba01bbab",
+  "check": "e2e:emoji",
+  "severity": "warn",
+  "target": "ui"
+ },
+ {
+  "id": "IM-05",
+  "skill": "impeccable",
+  "rule": "卡片/提示不用 >1px 彩色左/右边条",
+  "quote": "- A colored `border-left` or `border-right` above 1px on cards, list items, callouts, or alerts.",
+  "src": {
+   "file": "/home/box/.cursor/skills/impeccable/reference/craft-floor.md",
+   "line": 35,
+   "key": "IMF"
+  },
+  "sha8": "ba01bbab",
+  "check": "e2e:sideStripe",
+  "severity": "warn",
+  "target": "ui"
+ },
+ {
+  "id": "IM-06",
+  "skill": "impeccable",
+  "rule": "选区、焦点环、滚动条按主题色定制",
+  "quote": "- **Browser surfaces:** the parts you did not draw still carry the design. Text selection, the caret, custom scrollbars, focus rings, underline offset, and the ",
+  "src": {
+   "file": "/home/box/.cursor/skills/impeccable/reference/craft-floor.md",
+   "line": 15,
+   "key": "IMF"
+  },
+  "sha8": "ba01bbab",
+  "check": "e2e:surfaces",
+  "severity": "warn",
+  "target": "ui"
+ },
+ {
+  "id": "IM-07",
+  "skill": "impeccable",
+  "rule": "状态齐全：悬停、禁用、错误、空状态、键盘焦点（本页无异步加载，loading 记为不适用）",
+  "quote": "- **States:** hover, disabled, loading, error, empty. Plus real content, working controls, responsive composition, keyboard focus.",
+  "src": {
+   "file": "/home/box/.cursor/skills/impeccable/reference/craft-floor.md",
+   "line": 14,
+   "key": "IMF"
+  },
+  "sha8": "ba01bbab",
+  "check": "e2e:states",
+  "severity": "warn",
+  "target": "ui"
+ },
+ {
+  "id": "IM-08",
+  "skill": "impeccable",
+  "rule": "中文不留孤字；数字等宽对齐",
+  "quote": "- 中文断行：禁孤字；标题在短语处断；检查中英混排与数字对齐。",
+  "src": {
+   "file": "/home/box/agent-data/workflows/impeccable/SKILL.md",
+   "line": 37,
+   "key": "IMS"
+  },
+  "sha8": "97064172",
+  "check": "manual",
+  "severity": "info",
+  "target": "ui"
+ },
+ {
+  "id": "IM-09",
+  "skill": "impeccable",
+  "rule": "可选机械扫描（impeccable detect）：跑了就记结果，有告警要处理",
+  "quote": "4. **可选机械扫描**（仅 HTML/CSS/JSX 等源码）：`/home/box/.cursor/skills/impeccable/scripts/impeccable detect --json --scope type|layout <paths>`。PPT／PDF／Word 无此扫描，改用渲染页截图＋c",
+  "src": {
+   "file": "/home/box/agent-data/workflows/impeccable/SKILL.md",
+   "line": 29,
+   "key": "IMS"
+  },
+  "sha8": "97064172",
+  "check": "e2e:detect",
+  "severity": "info",
+  "target": "ui"
+ }
+]

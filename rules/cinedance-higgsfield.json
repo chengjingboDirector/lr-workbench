@@ -1,0 +1,332 @@
+[
+ {
+  "id": "CD-01",
+  "skill": "cinedance-higgsfield",
+  "rule": "正文不写场号/镜号/剧本页眉（管理信息留在工作台）",
+  "quote": "Do not include scene numbers.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 189,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:noSceneHeader",
+  "severity": "error",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-02",
+  "skill": "cinedance-higgsfield",
+  "rule": "正文不写 previously / again / continues / from last shot / as above 这类上下文泄漏词",
+  "quote": "- previously",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 1059,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:contextWords",
+  "severity": "warn",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-03",
+  "skill": "cinedance-higgsfield",
+  "rule": "首帧占位锁：第一帧就有全部必需人物，不留空镜、不延迟露出",
+  "quote": "The first visible frame already contains all required characters in their correct positions.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 336,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:firstFrameLock",
+  "severity": "error",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-04",
+  "skill": "cinedance-higgsfield",
+  "rule": "空间准确处不用 near / around / beside / nearby 等弱词，改为可测量位置",
+  "quote": "Never rely on weak words when spatial accuracy matters:",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 383,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:weakSpatial",
+  "severity": "warn",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-05",
+  "skill": "cinedance-higgsfield",
+  "rule": "有两人以上的镜，写出身体朝向与视线（faces / looks / eyes / turns）",
+  "quote": "Body direction and eye direction are separate.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 405,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:gazePerShot",
+  "severity": "warn",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-06",
+  "skill": "cinedance-higgsfield",
+  "rule": "只用明确切法（HARD CUT 等），不写 fade / dissolve / crossfade",
+  "quote": "Use only explicit cut types.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 535,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:cutTypes",
+  "severity": "error",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-07",
+  "skill": "cinedance-higgsfield",
+  "rule": "光学以对角视场角（°）和可见结果为主控；毫米只作辅助（2.5 兼容说明允许焦距语言）",
+  "quote": "Do not rely on millimeters, f-stops, ISO, lens brand names, or vintage lens model names as primary control.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 567,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:fovPrimary",
+  "severity": "warn",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-08",
+  "skill": "cinedance-higgsfield",
+  "rule": "不写镜头/机身/滤镜品牌型号",
+  "quote": "- Cooke S4",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 591,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:lensBrands",
+  "severity": "error",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-09",
+  "skill": "cinedance-higgsfield",
+  "rule": "动作按时间块写（起止秒）",
+  "quote": "For timed shots, write events in time blocks.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 976,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:timeBlocks",
+  "severity": "error",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-10",
+  "skill": "cinedance-higgsfield",
+  "rule": "只念剧本原句：引号内台词必须逐字出自文学本",
+  "quote": "Only the quoted scripted line is spoken.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 1004,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:dialogueVerbatim",
+  "severity": "error",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-11",
+  "skill": "cinedance-higgsfield",
+  "rule": "画外音必须明示 off-screen，否则不出画外声",
+  "quote": "No offscreen voices unless explicitly specified.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 1018,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:offscreenMarked",
+  "severity": "error",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-12",
+  "skill": "cinedance-higgsfield",
+  "rule": "不默认输出独立负向块；负向就近写在对应正向规则后",
+  "quote": "Do not output a standalone NEGATIVE CONSTRAINTS block by default.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 1176,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:noNegBlock",
+  "severity": "warn",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-13",
+  "skill": "cinedance-higgsfield",
+  "rule": "最终提示词为英文（正文无汉字）",
+  "quote": "- Is the final prompt in English?",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 1294,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:englishOnly",
+  "severity": "error",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-14",
+  "skill": "cinedance-higgsfield",
+  "rule": "不伪造已上传的 @ 标签：未绑定的参考只写待绑定，不标生成就绪",
+  "quote": "- 引用标签必须来自真实上传映射。只有路径或资产ID时交付映射表与待绑定说明，不伪造已上传的@标签；缺图可继续文本草案，不标记生成就绪。",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/SKILL.md",
+   "line": 18,
+   "key": "CDS"
+  },
+  "sha8": "5a38c26c",
+  "check": "auto:noFakeTags",
+  "severity": "error",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-15",
+  "skill": "cinedance-higgsfield",
+  "rule": "每个人物参考写最小锚点并声明与参考一致",
+  "quote": "@TAG: age + role/body type + current state + critical visible anchors + action-critical prop/body state. 100% matches the reference.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 283,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:charAnchors",
+  "severity": "warn",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-16",
+  "skill": "cinedance-higgsfield",
+  "rule": "单段 ≤30 秒（按 2.5 模型级上限；端点另核）",
+  "quote": "字节2.5发布说明给出的模型级参考能力为30张图、10段视频、10段音频，单次生成最长30秒，支持延长和局部编辑；不代表所有接入端点开放全部能力。",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/seedance-2.5-compatibility.md",
+   "line": 26,
+   "key": "CD25"
+  },
+  "sha8": "1550123f",
+  "check": "auto:segmentMax",
+  "severity": "error",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-17",
+  "skill": "cinedance-higgsfield",
+  "rule": "画幅、时长、帧率、分辨率等平台设置不进正文",
+  "quote": "If the user chooses these settings in Higgsfield/Seedance UI, omit them from the final prompt unless they are story-critical:",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 207,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:noUiSettings",
+  "severity": "warn",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-18",
+  "skill": "cinedance-higgsfield",
+  "rule": "每个时间块内的动作在时长内物理可完成（台词也要念得完）",
+  "quote": "For single continuous takes, ensure the action can physically happen in the available time.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 998,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:timingFits",
+  "severity": "error",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-21",
+  "skill": "cinedance-higgsfield",
+  "rule": "写作／管理注释不进模型正文（DRAFT、TIMING RISK 只能作 // 注释行）",
+  "quote": "Do not include prompt-writing notes inside the final Seedance prompt.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 155,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:noModelNotes",
+  "severity": "warn",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-22",
+  "skill": "cinedance-higgsfield",
+  "rule": "光线写明机位相对光源和曝光优先（不只写来向）",
+  "quote": "- camera side relative to light",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 961,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:lightDirection",
+  "severity": "warn",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-19",
+  "skill": "cinedance-higgsfield",
+  "rule": "灯光写明方向（from / behind / side），防止变成平光",
+  "quote": "## Lighting direction",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 955,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "auto:lightDirection",
+  "severity": "warn",
+  "target": "prompt"
+ },
+ {
+  "id": "CD-20",
+  "skill": "cinedance-higgsfield",
+  "rule": "密度只给控制点，不堆装饰形容词",
+  "quote": "Do not make prompts longer by adding decorative adjectives.",
+  "src": {
+   "file": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "line": 1139,
+   "key": "CD"
+  },
+  "sha8": "7b0e4f8d",
+  "check": "manual",
+  "severity": "info",
+  "target": "prompt"
+ }
+]

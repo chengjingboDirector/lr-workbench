@@ -1,0 +1,88 @@
+{
+ "built": "2026-11-09 23:49 (UTC+8)",
+ "sources": {
+  "CD": {
+   "path": "/home/box/agent-data/workflows/cinedance-higgsfield/references/original.md",
+   "sha8": "7b0e4f8d"
+  },
+  "CDS": {
+   "path": "/home/box/agent-data/workflows/cinedance-higgsfield/SKILL.md",
+   "sha8": "5a38c26c"
+  },
+  "CD25": {
+   "path": "/home/box/agent-data/workflows/cinedance-higgsfield/references/seedance-2.5-compatibility.md",
+   "sha8": "1550123f"
+  },
+  "AC": {
+   "path": "/home/box/agent-data/workflows/acting/references/original.md",
+   "sha8": "8841c5d1"
+  },
+  "ACS": {
+   "path": "/home/box/agent-data/workflows/acting/SKILL.md",
+   "sha8": "068b7298"
+  },
+  "LI": {
+   "path": "/home/box/agent-data/workflows/lira-image-prompts/references/original.md",
+   "sha8": "f480d1ad"
+  },
+  "LIS": {
+   "path": "/home/box/agent-data/workflows/lira-image-prompts/SKILL.md",
+   "sha8": "c546b80c"
+  },
+  "SS": {
+   "path": "/home/box/agent-data/workflows/story-to-screen/SKILL.md",
+   "sha8": "c2adf6dc"
+  },
+  "SS02": {
+   "path": "/home/box/agent-data/workflows/story-to-screen/references/02_story.md",
+   "sha8": "8c855a77"
+  },
+  "RDS": {
+   "path": "/home/box/agent-data/workflows/screenwriting-rewrite-diagnosis/SKILL.md",
+   "sha8": "f33821b0"
+  },
+  "RD": {
+   "path": "/home/box/shared-skills/screenwriting-rewrite-diagnosis/SKILL.md",
+   "sha8": "8bfe3687"
+  },
+  "CRS": {
+   "path": "/home/box/agent-data/workflows/audience-cold-read-panel/SKILL.md",
+   "sha8": "10456653"
+  },
+  "CR": {
+   "path": "/home/box/shared-skills/audience-cold-read-panel/SKILL.md",
+   "sha8": "c7830604"
+  },
+  "IMS": {
+   "path": "/home/box/agent-data/workflows/impeccable/SKILL.md",
+   "sha8": "97064172"
+  },
+  "IMF": {
+   "path": "/home/box/.cursor/skills/impeccable/reference/craft-floor.md",
+   "sha8": "ba01bbab"
+  },
+  "TAS": {
+   "path": "/home/box/agent-data/workflows/design-taste-frontend/SKILL.md",
+   "sha8": "23403f5f"
+  },
+  "TAC": {
+   "path": "/home/box/agent-data/workflows/design-taste-frontend/scripts/consistency.mjs",
+   "sha8": "080b835e"
+  },
+  "PJ": {
+   "path": "/workspace/story-to-screen/projects/LR-1101-01/workbench/rules/project_contract.md",
+   "sha8": "e87c67ab"
+  }
+ },
+ "counts": {
+  "cinedance-higgsfield": 22,
+  "acting": 12,
+  "lira-image-prompts": 10,
+  "story-to-screen": 5,
+  "screenwriting-rewrite-diagnosis": 5,
+  "audience-cold-read-panel": 4,
+  "impeccable": 9,
+  "design-taste-frontend": 10,
+  "project": 4
+ }
+}

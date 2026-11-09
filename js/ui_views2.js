@@ -1,0 +1,94 @@
+/* 场次工作台 · 界面层（二b）第0关、提示词、队列、后台、抽屉 */
+'use strict';
+function viewStage0() {
+  const dg = st.data.scene.diagnosis; const ch = dg.chosen;
+  const opts = dg.options.slice().sort((a, b) => (a.literaryChange ? 1 : 0) - (b.literaryChange ? 1 : 0));
+  const lv = (l) => /强项|可保留/.test(l) ? 'ok' : /P0|应修|必须/.test(l) ? 'bad' : 'warn';
+  const sc = dg.sceneCard; const am = dg.audienceMeta;
+  return `<div class="s0head"><div class="row" style="align-items:baseline;gap:12px;margin-bottom:10px"><h2 class="h1" style="margin:0">诊断与方向 <span class="lat">Stage 0</span></h2>${lintBadge(stage0Lint(), 's0', '第0关诊断（总控／改写诊断／观众冷读）', 's0')}</div>
+    ${ch ? `<div class="alert ${ch.proxy ? 'warn' : 'ok'} row"><span><b>当前方向：${esc(ch.title)}</b>｜${ch.proxy ? '总监代选｜待导演确认' : esc(ch.by) + ' 已确认'}<span class="muted proc">｜决定 ${esc(ch.id)} · sha ${esc(ch.sha8)} · ${esc(ch.time)}</span></span>${ch.proxy ? '<button class="btn sm" data-act="confirmDir">导演确认代选</button>' : ''}</div>` : '<div class="alert bad">还没有选方向：其他页面在选定之前不可用。</div>'}
+    <p class="lead"><b>一句话：</b>${esc(dg.summary)}</p><p class="ink2" style="max-width:72ch">${esc(dg.viewerEffect)}</p>
+    <div class="muted" style="font-size:12px">${chip('拍法定案 ' + dg.shootingOption.id + '：' + dg.shootingOption.title, '')} ${esc(dg.shootingOption.note)}</div></div>
+    <h2 class="h2">三个方向 <span class="lat">Options</span></h2><div class="opts">${opts.map((o) => { const on = ch && ch.option === o.id; return `<section class="opt ${on ? 'on' : ''}" aria-label="方向 ${esc(o.id)}">${o.recommended ? '<span class="badge">推荐</span>' : ''}<h3>${esc(o.title)}</h3><div class="row">${chip(o.permission, o.literaryChange ? 'warn' : 'ok')}<span class="num">${esc(o.secText)}</span></div>
+      <dl><dt>改什么</dt><dd>${esc(o.changes)}</dd><dt>保留</dt><dd>${esc(o.keeps)}</dd><dt>必须保留</dt><dd>${(o.mustKeep || []).map(esc).join('；')}</dd><dt>代价</dt><dd>${esc(o.risk)}${o.riskNote ? `<div class="muted" style="font-size:12px">注：${esc(o.riskNote)}</div>` : ""}</dd><dt>判断</dt><dd>${esc(o.recommendText)}</dd>${o.evidence ? `<dt>证据</dt><dd><details><summary>${esc(o.evidence.src || '')}</summary><ul>${(o.evidence.items || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ul></details></dd>` : ''}${o.shootingNotes ? `<dt>拍摄附注</dt><dd><details><summary>${esc(o.shootingNotes.src)}</summary><ul>${o.shootingNotes.items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></details></dd>` : ''}${o.avPoints ? `<dt>视听要点</dt><dd>${esc(o.avPoints)}</dd>` : ''}</dl>
+      <div class="foot"><span class="muted" style="font-size:11px">${esc(o.src)}</span><button class="btn ${on ? '' : 'pri'}" data-act="choose" data-v="${esc(o.id)}" ${on && !ch.proxy ? 'disabled' : ''}>${on ? (ch.proxy ? '确认这个' : '已选') : '选这个'}</button></div></section>`; }).join('')}</div>
+    ${sc ? `<details class="pane" style="margin-top:14px"><summary><b>场次卡</b> <span class="muted">进场→目标→策略→阻力→触发→出场｜${esc(sc.label)}</span></summary><table class="t"><tbody>${sc.items.map((i) => `<tr><th style="white-space:nowrap">${esc(i.k)}</th><td>${esc(i.v)} ${lineChips(i.lines)}</td></tr>`).join('')}<tr><th>删场测试</th><td>${esc(sc.cutTest.v)} ${lineChips(sc.cutTest.lines)} <span class="muted">${esc(sc.cutTest.refs.join('、'))}</span></td></tr></tbody></table></details>` : ''}
+    <h2 class="h2">诊断 <span class="lat">Findings</span></h2>${am ? `<p class="muted" style="font-size:12px;max-width:80ch">${esc(am.simLabel)}（读者 ${esc(am.readers.join('/'))}）</p>` : ''}
+    <div class="dimgrid">${dg.merged.map((m) => `<div class="dim merged"><h3><span>${esc(m.title)}</span>${chip(m.level, 'warn')}</h3><div class="muted" style="font-size:12px">${esc(m.dim)}｜合并自：${m.parts.map(esc).join('；')}</div><div class="row" style="margin-top:6px">${lineChips(m.lines)}</div></div>`).join('')}
+    ${dg.dims.map((d) => `<div class="dim"><h3><span>${esc(d.k)}</span><span class="muted num" style="font-size:12px">${d.items.length} 条</span></h3>${d.items.map((it) => `<div class="ditem"><span class="chip lv ${lv(it.level)}">${esc(it.level)}</span>${esc(it.text)} ${lineChips(it.lines)} <span class="tag-src proc">${esc(it.id)}</span></div>`).join('')}</div>`).join('')}</div>
+    <details class="riskbar pane"><summary><b>剧作风险</b> <span class="muted">${dg.risks.length} 条｜成本提示 ${dg.costNotes.length} 条</span></summary>${dg.risks.map((r) => `<div class="ditem"><b class="num">${esc(r.id)}</b> ${esc(r.text)} <span class="muted">${esc(r.link || '')}</span> ${lineChips(r.lines)}</div>`).join('')}${dg.costNotes.map((c) => `<div class="ditem">${chip('成本', 'warn')} ${esc(c.text)} ${lineChips(c.lines)} <span class="tag-src">${esc(c.src)}</span></div>`).join('')}</details>
+    ${dg.notes.length ? `<div class="alert warn proc" style="font-size:13px">${dg.notes.map(esc).join('<br>')}</div>` : ''}`;
+}
+function viewPrompt() {
+  let h = `<h2 class="h2">提示词 <span class="lat">≤30s per segment</span></h2><div class="row"><button class="btn" data-act="copyAll">${ico.copy}全部复制</button>${UI.copied.all ? `<span class="copied" role="status">${UI.copied.all.how} ${UI.copied.all.chars} 字</span>` : ''}<span class="muted" style="font-size:12px">灰色行是中文注释，复制时自动去掉；含未批 REF 时加 DRAFT 头并记日志。</span></div>`;
+  groups().forEach((g) => {
+    const p = WB.buildPrompt(st, g.id); const sec = WB.groupSec(st, g); const thumbs = [];
+    if (g.firstFrameRef) thumbs.push({ ref: 'FIRST-FRAME', name: '首帧 REF · ' + g.firstFrameRef.from, f: g.firstFrameRef.exists === false ? null : g.firstFrameRef.file, data: g.firstFrameRef.data, appr: g.firstFrameRef.status === '已批', status: g.firstFrameRef.status });
+    if (g.map) thumbs.push({ ref: g.map.code, name: g.map.code + '（无字版）', f: g.map.notext, appr: g.map.status === '已批', status: g.map.status });
+    g.shots.forEach((id) => { const s = S(id); (s.fixed ? ['in'] : ['in', 'out']).forEach((side) => { const f = s.sketch && s.sketch[side]; thumbs.push({ ref: `${id}_${side}`, name: `${id}_${side}`, f, appr: !!f && s.sketch.status === '已批', status: f ? s.sketch.status : '待生成' }); }); });
+    st.thumbSel = st.thumbSel || {}; if (!st.thumbSel[g.id]) { st.thumbSel[g.id] = {}; thumbs.forEach((t) => { st.thumbSel[g.id][t.ref] = !!t.appr; }); }
+    const rd = WB.readiness(st, g.id);
+    const clip = g.clips.filter((c) => c.status !== '已作废').slice(-1)[0];
+    h += `<section class="pcard" aria-label="${esc(g.name)} 提示词" id="pc-${g.id}"><header><b>${esc(g.name)}</b><span class="num ${sec > 30 ? 'bad' : 'muted'}">${sec}″ · ${g.shots.length} 镜</span>${p.pending.length ? chip(`未批 REF ${p.pending.length}`, 'warn') : chip('REF 全部已批', 'ok')}${g.refExpired ? chip('首帧 REF 过期：不可复制', 'bad') : ''}${sec > 30 ? chip('超过 30″：不可复制', 'bad') : ''}${lintBadge(promptLint(g), 'pr-' + g.id, g.name + ' 提示词（CINEDANCE＋ACTING＋项目约束）', g.id)}${rd.formal ? chip('正式生成就绪', 'ok') : rd.draft ? `<span class="chip warn" title="${esc('还不能正式生成：' + rd.formalWhy.join('；'))}">草稿可复制｜未达正式就绪</span>` : chip('不可复制', 'bad')}<span style="flex:1"></span><button class="btn pri" data-act="copy" data-v="${g.id}" ${sec > 30 || g.refExpired ? 'disabled' : ''}>${ico.copy}复制</button>${UI.copied[g.id] ? `<span class="copied" role="status">${UI.copied[g.id].how} ${UI.copied[g.id].chars} 字</span>` : ''}</header>
+      ${!rd.formal ? `<details style="padding:6px 14px"><summary class="muted" style="font-size:12px">为什么还不是「正式生成就绪」（${rd.formalWhy.length} 项）</summary><ul style="font-size:12px;margin:4px 0">${rd.formalWhy.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></details>` : ''}
+      <pre tabindex="0" aria-label="${esc(g.name)} 提示词正文">${p.lines.map((l) => l.en ? esc(l.t) : `<span class="n">${esc(l.t)}</span>`).join('\n')}</pre>
+      <div class="thumbs" aria-label="参考图">${thumbs.map((t) => `<div class="thumb"><div class="im">${t.f ? `<img src="${esc(t.data || t.f)}" alt="${esc(t.name)}" loading="lazy" onerror="imgFail(this)">` : '待生成'}</div><label><input type="checkbox" ${st.thumbSel[g.id][t.ref] ? 'checked' : ''} ${t.f ? '' : 'disabled'} data-act="thumb" data-g="${g.id}" data-name="${esc(t.ref)}"> <span style="word-break:break-all">${esc(t.name)}</span></label>${chip(t.status)}</div>`).join('')}</div>
+      <div class="thumbs proc" style="display:block"><div class="row"><b>片段与验收</b>${clip ? chip(clip.id + '｜' + clip.status) : '<span class="muted">还没登记片段</span>'}<button class="btn sm" data-act="regClip" data-v="${g.id}">登记生成片段（候选）</button>${clip ? `<label class="btn sm" style="cursor:pointer">${clip.lastFrameData ? '重新回填尾帧' : '回填实际尾帧'}<input type="file" accept="image/png,image/jpeg,image/webp" class="hide" data-act="lastFrame" data-g="${g.id}"></label>${clip.lastFrameData ? `<img src="${clip.lastFrameData}" alt="实际尾帧" style="height:40px;border-radius:4px"> <span class="muted num" style="font-size:11px">${esc(clip.lastFrame.split('/').pop())} · ${esc(clip.lastFrameSha8)}</span> <button class="btn sm" data-act="clearLastFrame" data-v="${g.id}">撤下尾帧</button>` : '<span class="muted" style="font-size:12px">未回填：已批后下一组仍用草图首帧</span>'}` : ''}</div>
+      ${clip ? `<div class="opts" style="margin-top:8px">${Object.keys(g.acceptance).map((role) => `<div class="pane"><div class="row"><b>${esc(role)}</b>${clip.checks[role] ? chip('通过', 'ok') : ''}</div>${g.acceptance[role].map((x, k) => `<label style="display:flex;gap:6px;font-size:13px;margin-top:4px"><input type="checkbox" data-act="acc" data-g="${g.id}" data-role="${esc(role)}" data-k="${k}" ${x.ok ? 'checked' : ''} ${UI.who !== role && UI.who !== '导演' ? 'disabled title="只能由该角色勾选"' : ''}>${esc(x.k)}</label>`).join('')}<button class="btn sm" style="margin-top:6px" data-act="accPass" data-g="${g.id}" data-role="${esc(role)}" ${clip.checks[role] ? 'disabled' : ''}>${esc(role)} 验收通过</button></div>`).join('')}</div><p class="muted" style="font-size:12px">三方都通过片段才「已批」；已批片段的实际尾帧替换下一组首帧 REF（草图保留）。重新生成会让下一组首帧 REF 过期、片段需复核。</p>` : ''}</div></section>`;
+  });
+  return h;
+}
+function viewQueue() {
+  const q = WB.approvalQueue(st);
+  return `<h2 class="h2">待导演定 <span class="lat">Director Queue</span></h2><p class="muted">「总监代选」是按推荐、最保守、不改文学的原则先填的值；导演一键确认或改选。</p>${fitPlanCard()}<div style="overflow-x:auto"><table class="t"><thead><tr><th>类别</th><th>事项</th><th>当前</th><th>操作</th></tr></thead><tbody>${q.map((x) => {
+    const opts = (x.options || [x.default, '不采用']).filter(Boolean); if (x.value && !opts.includes(x.value)) opts.unshift(x.value);
+    const act = x.proposal ? `<div class="row"><button class="btn sm" data-act="prop" data-v="${esc(x.id)}" data-ok="1">同意</button><button class="btn sm" data-act="prop" data-v="${esc(x.id)}" data-ok="0">驳回</button></div>` : x.id === 'Q-DIR' ? '<button class="btn sm" data-act="tab" data-v="stage0">去第0关</button>' : `<div class="row"><select aria-label="${esc(x.title)}" data-q="${esc(x.id)}">${opts.map((o) => `<option ${o === x.value ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select><button class="btn sm" data-act="decide" data-v="${esc(x.id)}" data-kind="${esc(x.kind)}">${x.value ? '确认/改选' : '定'}</button></div>`;
+    return `<tr><td>${chip(x.kind, '')}</td><td>${esc(x.title)} ${lineChips(x.lines)}</td><td>${x.value ? `${esc(x.value)}<br>${chip(x.proxy ? '总监代选｜待导演确认' : '已确认')}` : chip('待定', 'warn')}</td><td>${act}</td></tr>`;
+  }).join('')}</tbody></table></div>`;
+}
+function viewBackend() {
+  const dg = st.data.scene.diagnosis;
+  const fr = freshness();
+  return `<h2 class="h2">后台 <span class="lat">Log · Ops · Sources</span></h2>${fr.state === 'stale' ? `<div class="alert bad">${esc(fr.msg)}</div>` : ''}
+    <div class="row"><button class="btn" data-act="export">${ico.down}导出 JSON</button><button class="btn" data-act="exportOps">导出文件操作队列</button><button class="btn" data-act="reset">重置为初始数据</button><button class="btn" data-act="seedTask">下载 Seedance 规格巡检任务 JSON</button><button class="btn ghost" data-act="clearDir">清空方向（测试门禁）</button></div>
+    ${rulesBackend()}
+    <h3 class="h3">改动日志</h3>${st.log.length ? `<div style="overflow-x:auto"><table class="t"><thead><tr><th>编号</th><th>时间</th><th>谁</th><th>说了什么</th><th>范围</th><th>变量</th><th>前</th><th>后</th><th>状态</th></tr></thead><tbody>${st.log.slice().reverse().map((e) => `<tr><td class="num">${esc(e.id)}</td><td class="num">${esc(String(e.time).slice(5))}</td><td>${esc(e.who)}</td><td>${esc(e.text)}${e.alarm ? `<div class="muted">${esc(e.alarm)}</div>` : ''}${e.invalidates && e.invalidates.length ? `<div class="muted">失效：${esc(e.invalidates.join('；'))}</div>` : ''}</td><td>${esc(e.scope)}</td><td>${esc(e.variable)}</td><td>${esc(e.before)}</td><td>${esc(e.after)}</td><td>${chip(e.status)}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">还没有改动</div>'}
+    <h3 class="h3">文件操作队列（浏览器不挪文件；导出后用 tools/apply_ops.py 执行）</h3>${st.ops.length ? `<pre class="pane" style="font:12px var(--mono);white-space:pre-wrap">${esc(st.ops.map((o) => `${o.op} ${o.from} → ${o.to}`).join('\n'))}</pre>` : '<div class="empty">队列为空</div>'}
+    <h3 class="h3">跨场缺口与后台备注</h3><ul>${dg.backend.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+    <h3 class="h3">来源文件</h3><div style="overflow-x:auto"><table class="t"><tbody>${Object.entries(st.data.sources).map(([k, v]) => `<tr><td>${esc(k)}</td><td style="word-break:break-all">${esc(v.file)}</td><td class="num">${esc(v.sha8)}</td><td class="muted">${esc(v.note || '')}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function renderDrawer() {
+  const d = $('#drawer'); const D = UI.drawer;
+  if (!D) { d.classList.remove('open'); d.setAttribute('aria-hidden', 'true'); d.innerHTML = ''; return; }
+  d.classList.add('open'); d.setAttribute('aria-hidden', 'false');
+  const head = (t, extra) => `<header><b>${t}</b>${extra || ''}<span style="flex:1"></span><button class="btn sm" data-act="closeDrawer" aria-label="关闭抽屉">关闭</button></header>`;
+  if (D.kind === 'lines') {
+    const L = st.data.literary.lines; const a = Math.max(1, D.a - 3), b = Math.min(L.length, D.b + 3);
+    d.innerHTML = head(`文学本 L${D.a}${D.b !== D.a ? '–' + D.b : ''}`, `<span class="lat">${esc(st.data.literary.sha8)} · 只读</span>`) + `<div class="c lit">${L.slice(a - 1, b).map((l) => `<div class="l ${l.n >= D.a && l.n <= D.b ? 'hl' : ''} ${l.text && /^[\x20-\x7e’‘“”—…]+$/.test(l.text) ? 'en' : ''}"><span class="no">${l.n}</span><span>${esc(l.text) || '&nbsp;'}</span></div>`).join('')}</div>`;
+    return;
+  }
+  const gap = WB.gaps(st).find((g) => g.key === D.key);
+  if (!gap) { d.innerHTML = head('缺资产') + '<div class="c"><div class="empty">这个缺口已经不存在（可能已入库）</div></div>'; return; }
+  const cands = WB.candidatesFor(st, gap); const pick = st.picks[gap.key];
+  d.innerHTML = head(`${esc(gap.id || '待补码')} ${esc(gap.name)}`, chip(gap.type, gap.status === '缺' ? 'bad' : 'warn')) + `<div class="c">
+    <p>状态 <b>${esc(gap.state)}</b> · 视角 <b>${esc(gap.view)}</b> · 用在 ${gap.shots.map((x) => `<button class="chip" data-act="selShot" data-v="${x}">${short(x)}</button>`).join(' ')}</p>${gap.note ? `<p class="muted">${esc(gap.note)}</p>` : ''}
+    <div class="abc"><div class="row"><b>A／B／C 候选</b>${pick ? chip('已入库｜待批', 'warn') : chip('缺', 'bad')}</div><form data-form="pick"><div class="cands">${['cA', 'cB', 'cC'].map((c) => { const e = cands.find((x) => x.key.endsWith('#' + c)); return `<label class="cand ${e ? '' : 'dis'}"><div class="im">${e ? `<img src="${esc(e.file)}" alt="候选 ${c.slice(1)}">` : '待生成'}</div><span class="row"><input type="radio" name="cand" value="${c}" ${e ? '' : 'disabled'} ${pick && pick.cand === c ? 'checked' : ''}> ${c.slice(1)} ${e ? '<span class="muted num" style="font-size:11px">' + esc(e.sha8) + '</span>' : ''}</span></label>`; }).join('')}</div>
+    <input class="inp" style="width:100%" name="note" aria-label="备注" placeholder="备注（为什么选它）" value="${esc(pick ? pick.note : '')}"><div class="row" style="margin-top:8px"><button class="btn pri" type="submit" ${cands.length ? '' : 'disabled'}>选定 → 已入库｜待批</button>${cands.length ? '' : '<span class="muted">还没有候选图：需要先出图</span>'}</div></form>
+    ${gapPromptBlock(gap)}
+    ${pick ? `<p class="muted" style="font-size:12px">入库：${esc(pick.file)}｜sha ${esc(pick.sha8)}｜${esc(pick.who)} ${esc(pick.time)}；落选进 _候选存档/。</p>` : `<p class="muted" style="font-size:12px">命名：${esc(WB.refPath(gap.id || 'TMP-…', gap.state, gap.view, 'cA'))}</p>`}</div></div>`;
+}
+
+/* LIRA：A/B/C 候选出图提示词（规则库 LI-01…10 校验）；只出文本，不调用出图 */
+function gapPromptBlock(gap) {
+  const ps = ['A', 'B', 'C'].map((c) => WB.gapPrompt(st, gap, c));
+  if (!ps[0].ok) return `<p class="muted" style="font-size:12px">出图提示词：${esc(ps[0].why)}</p>`;
+  const L = ps.map((p) => gapLint(gap, p));
+  return `<details class="pane" style="margin-top:10px"><summary><b>候选出图提示词</b> <span class="muted">LIRA｜${esc(ps[0].kind === 'location' ? '场景' : ps[0].kind === 'character' ? '人物' : ps[0].kind === 'vehicle' ? '载具/机械' : '道具')}｜平台设置 ${esc(ps[0].platform.aspect)}（界面里设）</span> ${lintBadge(L, 'gap-' + gap.key, 'A/B/C 出图提示词（LIRA）')}</summary>${ps.map((p, i) => `<div style="margin-top:8px"><div class="row"><b>${'ABC'[i]}</b><span class="muted" style="font-size:12px">${esc(p.variant)}</span><span style="flex:1"></span><button class="btn sm" data-act="copyGap" data-v="${esc(gap.key)}" data-k="${i}">复制</button></div><pre class="gp">${esc(p.prompt)}</pre></div>`).join('')}<p class="muted" style="font-size:12px">提示词不是资产：出图后放进 assets/REF/_待补码_…/，回到这里选 A/B/C 并看图验收。</p></details>`;
+}
+
+function fitPlanCard() {
+  const pv = WB.fitPlanPreview(st); const w = pv.window;
+  if (pv.done) return `<div class="alert ${pv.risky ? 'warn' : 'ok'}" style="font-size:13px">台词容纳预案：三镜已不短于预案（${WB.FIT_PLAN.map((p) => short(p.id) + ' ' + WB.shot(st, p.id).duration + '″').join('，')}）｜全场 ${WB.sceneSec(st)}″${pv.risky ? '｜但仍有台词念不完，见剪辑页台词时序' : '｜仍需按实际朗读点「试听能念完」'}</div>`;
+  const cnt = WB.FIT_PLAN.reduce((n, p) => { const s = WB.shot(st, p.id); return n + s.dialogue.filter((d) => d.t1 > s.duration + 0.05).length; }, 0);
+  return `<div class="alert warn" style="font-size:13px"><b>台词容纳预案</b>｜总监代选｜待导演确认<div>${cnt ? `组二、组三现有 ${cnt} 句台词在镜内念不完（正式交付被阻断）。` : '当前估算已能容纳，预案只作备选。'}只加秒、不改台词、不缩短任何镜：${pv.steps.map((p) => `${short(p.id)} ${p.from}″→${p.to}″`).join('，')}。执行后 ${Object.entries(pv.groups).map(([g, v]) => WB.group(st, g).name + ' ' + v + '″').join('、')}，全场 ${pv.scene}″（窗口 ${w.min}–${w.max}″）。整套要么全部生效、要么全部不动。执行后仍要按实际朗读验收。</div><div class="row" style="margin-top:6px"><button class="btn sm pri" data-act="fitPlan" ${UI.who === '导演' ? '' : 'disabled title="只有导演可以定秒数"'}>按预案加秒</button><span class="muted" style="font-size:12px">来源：Codex 第 3 轮复检 P0；第 4 轮独立方案另给更宽的备选（C014 8.4／C016 3.8／C017 5.5／C018 7.7，需确认 C016 可借 0.2″），未采用</span></div></div>`;
+}
