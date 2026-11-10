@@ -17,7 +17,8 @@
   WB.DENAME = [[/\bElias's\b/g, "the father's"], [/\bElias\b/g, 'the father'], [/\bNoah's\b/g, "the android child's"], [/\bNoah\b/gi, 'the android child'], [/\b(the commander |Kane )Mercer's\b/g, "the commander's"], [/\b(the commander |Kane )Mercer\b/g, 'the commander'], [/\bMercer's\b/g, "the commander's"], [/\bMercer\b/g, 'the commander'], [/\bKane's\b/g, "the commander's"], [/\bKane\b/g, 'the commander'], [/\bthe Rustline scrapyard\b/g, 'the scrapyard'], [/\bRustline\b/g, 'scrapyard']];
   WB.deName = function (t) {
     /* 批准对白用 \u0001…\u0002 包住，整段逐字保留（对白里可以有引号）；其余引号段、REF 码也保留 */
-    return String(t).split(/(\u0001[^\u0002]*\u0002|"[^"]*"|\[REF:[^\]]*\])/).map((seg, i) => i % 2 ? seg : WB.DENAME.reduce((a, [re, to]) => a.replace(re, to), seg)).join('').replace(/(^|[.!?:]\s+|\|\s+)the (father|android child|commander|scrapyard)/g, (m, p, w) => p + 'The ' + w).replace(/[\u0001\u0002]/g, '');
+    /* 去名和句首大写都只处理未保护片段；批准对白（哨兵段）、引号段、REF 码全程逐字 */
+    return String(t).split(/(\u0001[^\u0002]*\u0002|"[^"]*"|\[REF:[^\]]*\])/).map((seg, i) => i % 2 ? seg : WB.DENAME.reduce((a, [re, to]) => a.replace(re, to), seg).replace(i === 0 ? /(^|[.!?:]\s+|\|\s+)the (father|android child|commander|scrapyard)/g : /([.!?:]\s+|\|\s+)the (father|android child|commander|scrapyard)/g, (m, p, w) => p + 'The ' + w)).join('').replace(/[\u0001\u0002]/g, '');
   };
   WB.NAMES_RE = /\b(Elias|Noah|Kane|Mercer|Rustline)\b/i;
   /* 只豁免本组批准台词的原句（不是所有引号）：别处的引号、REF 码、道具铭牌都要查名 */

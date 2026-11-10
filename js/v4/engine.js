@@ -205,7 +205,9 @@
     const CN = (w) => { const d = { 零: 0, 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9 }; if (/^十/.test(w)) w = '一' + w; const m = w.match(/^([一二两三四五六七八九])?(十)?([一二三四五六七八九])?$/); if (!m) return null; return m[2] ? (d[m[1]] || 1) * 10 + (m[3] ? d[m[3]] : 0) : (m[1] ? d[m[1]] : null); };
     const norm = String(text).replace(/第\s*([一二两三四五六七八九十]+)(?=\s*(?:[、,，和及与到至~～–-]\s*(?:第\s*)?[一二两三四五六七八九十\d]+\s*)*[镜秒])/g, (m, w) => { const n = CN(w); return n == null ? m : '第' + n; }).replace(/([、,，和及与到至~～–-]\s*(?:第\s*)?)([一二两三四五六七八九十]+)(?=\s*[镜秒])/g, (m, p, w) => { const n = CN(w); return n == null ? m : p + n; });
     /* 数字之间的顿号／逗号是枚举（第1、3镜），不拆句 */
-    const sents = norm.replace(/(\d)\s*([、,，])\s*(?=(?:第\s*)?[CL]?\d)/g, '$1\uE000').split(/[，,。；;、\n]+/).map((x) => x.replace(/\uE000/g, '、').trim()).filter(Boolean);
+    let normR = norm.replace(/第\s*(\d+)\s*镜\s*(?:到|至|[–\-~～])\s*(?:第\s*)?(\d+)\s*镜/g, '第$1–$2镜'); // 「第1镜到第3镜」＝区间
+    const splitS = (t) => t.replace(/(\d)\s*([、,，])\s*(?=(?:第\s*)?[CL]?\d)/g, '$1\uE000').split(/[，,。；;、\n]+/).map((x) => x.replace(/\uE000/g, '、').trim()).filter(Boolean);
+    let sents = splitS(normR);
     // 定位逐句解析：本句有显式定位（第N镜／C0N／L行号／第N秒）就用本句的；没有才继承上一句的定位（初始＝入口范围）
     const scopeShots = sid ? [sid] : (scope === 'seg' && gid) ? WB.group(S.st, gid).shots.slice() : S.st.data.shots.map((x) => x.id);
     const DUR_RE = /太急|太慢|快一点|慢一点|镜长/;
@@ -234,17 +236,33 @@
       return { shots: [...new Set(out)], np: null, pure: !rest.replace(/[\s：:的和及与跟]/g, '') };
     };
     let ctx = { shots: scopeShots, np: null, narrow: !!sid }; let secShots = null; let firstNp = null;
+    /* 排除写法：「除了第1镜（以外），其他／其余…」「第1镜不改／不动／保持，其余…」→ 入口范围减去被排除的镜；认不出的排除写法整句不改 */
+    { const OTH = '(?:其余|其他|其它|别的|剩下(?:的)?|剩余)(?:的)?(?:镜头|镜|几镜|部分)?(?:都)?';
+      /* 逐处处理：每一处排除写法换成标记，标记所在的那一句（以及沿用它的后句）用「入口范围减去被排除的镜」；别处照常逐句定位 */
+      const exList = []; let exBad = null;
+      for (let guard = 0; guard < 6 && !exBad; guard++) {
+        const mA = normR.match(new RegExp('除(?:了|开)?\\s*([^，,。；;\\uE001\\uE002]+?)\\s*(?:以外|之外|外)?\\s*[，,、]?\\s*' + OTH));
+        const mB = !mA && normR.match(new RegExp('([^，,。；;\\uE001\\uE002]+?)\\s*(?:都)?(?:不改|不动|别改|别动|保持不变|保持原样|保持|不用改|不变|先不动)\\s*[，,、]\\s*' + OTH));
+        const m = mA || mB; if (!m) break;
+        const lx = locate(m[1]); if (sid) exBad = '镜卡里不能用排除写法'; else if (!lx || lx.none || lx.np || !lx.pure) exBad = '没认出「' + m[0] + '」里排除的是哪几镜' + (lx && lx.none ? '（' + lx.none.split('，')[0] + '）' : '');
+        else { const base = scopeShots.filter((x) => !lx.shots.includes(x)); if (!base.length) exBad = '排除后没有剩下的镜'; else { exList.push({ shots: base, np: null, narrow: true, excl: lx.shots.slice() }); normR = normR.replace(m[0], '\uE001' + (exList.length - 1) + '\uE002'); } }
+      }
+      if (!exBad && /除了|除开|(?:其余|其他|其它|剩下|剩余)(?:的)?(?:镜|几镜|部分)?/.test(normR)) exBad = '这句里有「除了／其余／其他」，但没认出排除的是哪几镜';
+      if (!exBad && exList.length) { sents = splitS(normR); if (sents.some((x) => /^\uE001\d+\uE002$/.test(x))) exBad = '只写了排除哪几镜，没写其余的要怎么改'; if (sents.some((x) => /.\uE001/.test(x))) exBad = '排除写法前面还连着别的内容，请用逗号或分号分开'; }
+      if (exBad) return { scope, gid, sid, crew, items: [{ src: String(text), kind: 'none', res: '需人处理', why: exBad + '，没有改；请写成「除了第1镜，其余暗一点」或直接列出要改的镜', shots: [] }], notes, secShots: null };
+      var EXL = exList; }
     let baseShots = ctx.shots, needPickShot = null, narrow = ctx.narrow; let gazeCtx = false; let pendLoc = null;
     sents.forEach((s0) => {
-      let loc = locate(s0); if (loc && loc.none) { pendLoc = null; ctx = { bad: loc.none }; items.push({ src: s0, kind: 'none', res: '需人处理', why: loc.none, shots: [] }); return; }
+      const mk = s0.match(/^\uE001(\d+)\uE002/); if (mk) { s0 = s0.slice(mk[0].length).trim(); if (pendLoc || locate(s0)) { pendLoc = null; ctx = { bad: '排除写法和镜号写在同一句' }; items.push({ src: s0, kind: 'none', res: '需人处理', why: '这句既用了排除写法又写了镜号，没有改；请分开写', shots: [] }); return; } ctx = Object.assign({}, EXL[+mk[1]]); }
+      let loc = mk ? null : locate(s0); if (loc && loc.none) { pendLoc = null; ctx = { bad: loc.none }; items.push({ src: s0, kind: 'none', res: '需人处理', why: loc.none, shots: [] }); return; }
       /* 只写了镜号没写改什么（「第1镜、第3镜暗一点」被拆成两句）：镜号并入下一句 */
       if (loc && loc.pure && !loc.np) { pendLoc = (pendLoc || []).concat(loc.shots); return; }
       if (pendLoc) { if (!loc) loc = { shots: pendLoc.slice(), np: null }; else if (!loc.np) loc = Object.assign({}, loc, { shots: [...new Set(pendLoc.concat(loc.shots))] }); else { items.push({ src: s0, kind: 'none', res: '需人处理', why: '前面写了镜号、这句又落在两镜交界，没有改；请分开写', shots: [] }); pendLoc = null; ctx = { bad: '定位冲突' }; return; } pendLoc = null; }
       if (!loc && ctx.bad) { items.push({ src: s0, kind: 'none', res: '需人处理', why: '本句沿用上一句的定位，而上一句定位无效（' + ctx.bad.split('，')[0] + '），没有改；请在本句写明第几镜或第几秒', shots: [] }); return; }
-      if (loc) { ctx = { shots: loc.shots, np: loc.np, narrow: true, sec: loc.sec || null }; if (loc.sec && !secShots) secShots = loc.sec; if (loc.np && !firstNp) firstNp = loc.np; }
+      if (loc) { ctx = { shots: loc.shots, np: loc.np, narrow: true, sec: loc.sec || null, lvl: loc.np ? null : 'shot' }; if (loc.sec && !secShots) secShots = loc.sec; if (loc.np && !firstNp) firstNp = loc.np; }
       baseShots = ctx.shots.slice(); needPickShot = ctx.np; narrow = ctx.narrow; const n0 = items.length;
       const s = s0.replace(/第\s*-?\d+(\.\d+)?\s*秒/g, '').replace(/(?:^|[^A-Za-z0-9])L\s*-?\d+(?:\s*[–-]\s*L?-?\d+)?\s*[：:]?/g, '').trim() || s0;
-      try { sentence(s0, s); } finally { items.slice(n0).forEach((it) => { it._np = needPickShot; if (needPickShot && ctx.sec) it.secT = ctx.sec.t; }); }
+      try { sentence(s0, s); } finally { items.slice(n0).forEach((it) => { it._np = needPickShot; if (needPickShot && ctx.sec) it.secT = ctx.sec.t; if (ctx.lvl && !needPickShot) it.lvl = ctx.lvl; if (ctx.excl) it.excl = ctx.excl; }); }
     });
     if (pendLoc) items.push({ src: sents[sents.length - 1], kind: 'none', res: '需人处理', why: '只写了第几镜，没写要改什么，没有改', shots: [] });
     function sentence(s0, s) {
@@ -267,10 +285,11 @@
       if (R.gaze.re.test(s) || (gazeCtx && /克制|压|收|停顿|停/.test(s))) {
         gazeCtx = true;
         const gs = R.gaze.shots.filter((x) => (narrow ? baseShots.includes(x) : (!gid || scope !== 'seg' || WB.group(S.st, gid).shots.includes(x))));
-        if (!gs.length && narrow) { const mb = baseShots.filter((x) => R.gaze.maybe.includes(x)); const opts = []; if (/克制|压|收/.test(s)) opts.push({ field: 'perf.intensity', value: '克制', label: '按本镜处理：情绪收到克制' }); if (/停顿|停/.test(s)) opts.push({ field: 'rhythm.pause', value: '+1.0', label: '按本镜处理：停顿 +1.0″' });
+        if (!gs.length && narrow) { const mb = baseShots.filter((x) => R.gaze.maybe.includes(x)); const opts = []; if (/克制|压|收/.test(s)) opts.push({ field: 'perf.intensity', value: '克制', label: '按本镜处理：情绪收到克制' }); if (/停顿|停/.test(s)) { const pd = E4.pauseDir(s); if (pd === 1) opts.push({ field: 'rhythm.pause', value: '+1.0', label: '按本镜处理：停顿 +1.0″' }); else if (pd === 'stop') opts.push({ field: 'rhythm.pause', value: '0', label: '按本镜处理：不停顿' }); }
           items.push(opts.length ? { src: s0, kind: 'pick', res: '待补选', why: baseShots.map((x) => +x.slice(5)).join('、') + ' 镜不在规则包的对视镜（' + R.gaze.shots.map((x) => +x.slice(5)).join('、') + '）里' + (mb.length ? '，可能是对视镜（待确认）' : '') + '：要按本镜改就选一项，不选不改', options: opts, shots: baseShots.slice() } : { src: s0, kind: 'none', res: '需人处理', why: '本镜不在对视镜里，这句没有可改的项', shots: [] }); return; }
         if (/克制|压|收/.test(s)) items.push({ src: s0, kind: 'set', field: 'perf.intensity', value: '克制', shots: gs, why: '对视镜：' + gs.map((x) => x.slice(4) + '（' + R.gaze.evidence[x] + '）').join('、'), maybe: R.gaze.maybe });
-        if (/停顿|停/.test(s)) items.push({ src: s0, kind: 'set', field: 'rhythm.pause', value: '+1.0', shots: gs, why: '对视镜停顿各 +1.0″（档位值）', maybe: R.gaze.maybe });
+        if (/停顿|停/.test(s)) { const pd = E4.pauseDir(s); if (pd === null) items.push({ src: s0, kind: 'none', res: '需人处理', why: '停顿要长还是要短没说清（或两个方向都写了），没有改', shots: [] });
+          else { /* 按各镜当前档位和方向算目标：更长＝至少 +1.0″ 且至少升一档（到 +1.5″ 封顶，不会降）；短＝降一档；别停＝归 0 */ const PT = R.fields['rhythm.pause'].tiers; const byV = new Map(); gs.forEach((x) => { const cv = String(E4.val(S, 'rhythm.pause', x).v || '0'); const i0 = Math.max(0, PT.indexOf(cv)); const nv = pd === 'stop' ? '0' : pd === -1 ? PT[Math.max(0, i0 - 1)] : PT[Math.min(PT.length - 1, Math.max(PT.indexOf('+1.0'), i0 + 1))]; if (!byV.has(nv)) byV.set(nv, []); byV.get(nv).push(x); }); byV.forEach((xs, nv) => items.push({ src: s0, kind: 'set', field: 'rhythm.pause', value: nv, shots: xs, why: pd === 'stop' ? '对视镜不停顿（停顿归 0）' : pd === -1 ? '对视镜停顿短一档 → ' + nv + '″' : '对视镜停顿加长 → ' + nv + '″（档位值，到 +1.5″ 封顶）', maybe: R.gaze.maybe })); } }
         return;
       }
       let hit = false;
@@ -287,7 +306,7 @@
         if (fk === 'perf.intensity') { items.push({ src: s0, kind: 'step', field: fk, dir, shots, why: `${F.label}：往${dir === -1 ? '克制' : '外放'}方向移一档（当前档按镜头表演描述判断，属岗位判断，可改选）` }); return; }
         if (cur === null) { items.push({ src: s0, kind: 'pick', res: '待补选', why: `「${F.label}」原文没写，当前值无依据，请选档`, options: F.tiers.filter((t) => t !== '0').map((t) => ({ field: fk, value: t, label: t + (F.unit || '') })), shots }); return; }
         /* 相对调整按「会被改到的镜」各自的当前值算目标（不拿第一镜或保留另设的镜当基准）；当前值不同的镜分组，各升／降一档 */
-        const tiers = F.tiers; const chg = shots.filter((x) => !E4.keepsOwn(S, x, fk, scope)); const keep = shots.filter((x) => !chg.includes(x)); const basis = chg.length ? chg : shots;
+        const tiers = F.tiers; const chg = shots.filter((x) => !E4.keepsOwn(S, x, fk, ctx.lvl || scope)); const keep = shots.filter((x) => !chg.includes(x)); const basis = chg.length ? chg : shots;
         const byCur = new Map(); basis.forEach((x) => { const v = String(E4.val(S, fk, x).v); if (!byCur.has(v)) byCur.set(v, []); byCur.get(v).push(x); });
         let first = true; byCur.forEach((grp, cv) => { let idx = tiers.indexOf(cv); if (idx < 0) idx = Math.floor(tiers.length / 2); let ni = Math.max(0, Math.min(tiers.length - 1, idx + dir));
           const gs = first && chg.length ? grp.concat(keep) : grp; first = false;
@@ -318,11 +337,15 @@
     const bad = it.shots.filter((id) => E4.perfCur(S, id) === null); if (!bad.length) return true;
     it.kind = 'pick'; it.res = '待补选'; it.why = `「${F.label}」${bad.map((x) => x.slice(4)).join('、')} 的当前档无依据（表演描述里判断不出），请直接选档`; it.options = F.tiers.map((t) => ({ field: it.field, value: t, label: t })); return false;
   };
-  E4.commit = function (S, rec, items, opt) {
+  /* 停顿方向：1＝更长，-1＝更短，'stop'＝别停，null＝说不清／两个方向都有 */
+  E4.pauseDir = function (s) { if (/(?:不要|别|不用|不必)\s*停(?:顿)?\s*(?:太|那么|这么|过于|得)?\s*(?:久|长)/.test(s)) return -1; if (/(?:不要|别|不用|不必|不能|没必要)\s*(?:太|那么|这么|过于)?\s*(?:长|久)|停(?:顿)?\s*(?:不要|别|不用|不必)\s*(?:太|那么|这么|过于)?\s*(?:长|久)/.test(s)) return -1; if (/(?:不要|别|不用|不必)\s*(?:太|那么|这么|过于)?\s*(?:短|少)/.test(s)) return null; const neg = /(?:不|别|没|勿|无需)/.test(s.replace(/别停|不要停|不停|不用停|不要太|别太/g, '')); const stop = /别停|不要停|不停|不用停|去掉停顿|取消停顿/.test(s); const dn = /停顿?\s*(?:更|再)?\s*(?:短|少)|少停|减少停顿|缩短停顿|停短/.test(s); const up = /停顿?\s*(?:更|再)?\s*(?:长|久|多)|多停|停久|加长停顿|留白|停一下|停顿一下/.test(s) || (/停顿/.test(s) && !dn && !stop); const n = [stop, dn, up].filter(Boolean).length; if (n !== 1 || (neg && !stop)) return null; return stop ? 'stop' : dn ? -1 : 1; };
+  E4.commit = function (S, rec, items, optIn) {
+    const opt = optIn; // 每项按实际作用范围（句内点名单镜＝本镜）记来源层级，见下
     let pg = S.pending.find((p) => p.fid === rec.id && p.status === '待导演确认');
     const newPg = !pg; if (!pg) { const nOld = S.pending.filter((p) => p.fid === rec.id).length; pg = { id: 'PG' + rec.id + (nOld ? '-' + (nOld + 1) : ''), fid: rec.id, items: [], status: '待导演确认', label: '' }; }
     let n = 0;
     items.forEach((it) => {
+      const opt = it.lvl ? Object.assign({}, optIn || {}, { scope: it.lvl }) : optIn;
       if (it.res !== '可应用') { if (it.res === '待导演确认' && !pg.items.includes(it)) pg.items.push(it); return; }
       if (!E4.stepReady(S, it)) return;
       if (it.kind === 'set' && it.field === 'rhythm.pause') { const add = parseFloat(it.value) || 0; const bad = it.shots.filter((sid) => !(!it.force && E4.keepsOwn(S, sid, it.field, (opt && opt.scope) || 'scene')) && WB.shot(S.st, sid).duration + add - (parseFloat((S.layers.shot[sid] || {})['rhythm.pause']) || 0) < 1); if (bad.length) { it.res = '需人处理'; it.why = '这样改会让 ' + bad.map((x) => +x.slice(5) + ' 镜').join('、') + '短于 1″，没有改'; return; } }
@@ -346,7 +369,7 @@
     if (pg.items.length) rec.pendGroup = pg.id;
     return n;
   };
-  E4.recOf = (it) => ({ src: it.src, kind: it.kind, field: it.field, value: it.value, dir: it.dir, delta: it.delta, guard: it.guard, res: it.res, why: it.why, shots: it.shots, options: it.options, needShot: it.needShot, review: it.review, resNote: it.resNote, ownNote: it.ownNote, ask: it.ask, maybe: it.maybe, layer: it.layer, crew: it.crew, link: it.link, note: it.note, inGroup: it.inGroup, segShots: it.segShots, ownShots: it.ownShots, ownForced: it.ownForced });
+  E4.recOf = (it) => ({ src: it.src, kind: it.kind, field: it.field, value: it.value, dir: it.dir, delta: it.delta, guard: it.guard, res: it.res, why: it.why, shots: it.shots, options: it.options, needShot: it.needShot, review: it.review, resNote: it.resNote, ownNote: it.ownNote, lvl: it.lvl, excl: it.excl, ask: it.ask, maybe: it.maybe, layer: it.layer, crew: it.crew, link: it.link, note: it.note, inGroup: it.inGroup, segShots: it.segShots, ownShots: it.ownShots, ownForced: it.ownForced });
   E4.submit = function (S, text, opt) {
     const t0 = T0(); opt = opt || {}; const p = E4.parse(S, text, opt); const fid = 'FB' + (++S.seq); const before = snap(S);
     const rec = { id: fid, text, scope: p.scope, gid: p.gid, sid: p.sid, crew: p.crew, entry: opt.entry, role: S.role, time: now(), items: p.items, pendGroup: null, parentVer: Object.fromEntries(Object.entries(S.ver).map(([k, v]) => [k, v.n])), secShots: p.secShots };
@@ -360,7 +383,7 @@
     const t0 = T0(); const rec = S.fb.find((f) => f.id === fid); const before = snap(S); choice = choice || {};
     rec.items.forEach((it, i) => {
       const pickShot = (choice.shots && choice.shots[i]) || choice.shot; // 每项独立选择；选的镜必须在这一项的候选里
-      if (it.needShot && pickShot && it.needShot.includes(pickShot)) { it.shots = [pickShot]; it.needShot = null; it.at = pickShot; if (it.field && R.fields[it.field].match) it.shots = E4.fieldShots(S, it.field, it.shots); }
+      if (it.needShot && pickShot && it.needShot.includes(pickShot)) { it.shots = [pickShot]; it.needShot = null; it.at = pickShot; it.lvl = 'shot'; if (it.field && R.fields[it.field].match) it.shots = E4.fieldShots(S, it.field, it.shots); }
       const pk = choice.picks && choice.picks[i];
       if (pk && it.kind === 'pick') { it.kind = 'set'; it.field = pk.field; it.value = pk.value; it.layer = R.fields[pk.field].layer; it.crew = R.layers[it.layer].crew; it.why = R.fields[pk.field].label + ' → ' + pk.label; if (!it.shots || !it.shots.length) it.shots = rec.sid ? [rec.sid] : rec.gid ? WB.group(S.st, rec.gid).shots.slice() : S.st.data.shots.map((x) => x.id); if (R.fields[pk.field].match) it.shots = E4.fieldShots(S, pk.field, it.shots); }
       if (it.res === '待补选' && !it.needShot && it.kind !== 'pick') { it.res = '可应用'; E4.guardCrew(it, S.role === '导演' ? (rec.crew || '导演') : S.role, S.role === '导演' ? rec.entry : 'crew', null); }
@@ -651,7 +674,7 @@
     if (S.role !== it.crew && S.role !== '导演') return { ok: false, msg: '这条建议给' + R.crews[it.crew].label + '处理' };
     if (!ok) { it.sugg = { ok: false, by: S.role, time: now() }; S.journal.push({ t: 'sugg', fid, idx, ok: false }); return { ok: true }; }
     if (!(it.shots || []).length || !['set', 'step', 'dur'].includes(it.kind)) return { ok: false, msg: '这条建议没有明确的镜头或改法，请在岗位栏手动改后点「不采纳」记录' };
-    const r = E4.applyExact(S, '采纳建议（' + fid + '）：' + it.src, it, { scope: rec.scope, gid: rec.gid, sid: rec.sid });
+    const r = E4.applyExact(S, '采纳建议（' + fid + '）：' + it.src, it, { scope: it.lvl || rec.scope, gid: rec.gid, sid: rec.sid });
     it.sugg = { ok: true, by: S.role, time: now(), fid: r.rec.id }; S.journal.push({ t: 'sugg', fid, idx, ok: true }); return { ok: true, r };
   };
   E4.review = function (S, fid, idx, ok) { const rec = S.fb.find((f) => f.id === fid); const it = rec.items[idx]; it.reviewed = { ok, by: S.role, time: now() }; S.journal.push({ t: 'review', fid, idx, ok }); };
